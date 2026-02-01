@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>XENORUN: ULTIMATE</title>
+<title>XENORUN: GIF EDITION</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     
     * { box-sizing: border-box; touch-action: none; }
     
     body { 
-        margin: 0; background: #050510; overflow: hidden; 
+        margin: 0; background: #111; overflow: hidden; 
         font-family: 'Press Start 2P', cursive; color: #fff; 
         display: flex; justify-content: center; align-items: center; 
         height: 100vh; user-select: none; 
@@ -22,458 +22,243 @@
         aspect-ratio: 16/9;
         background: #000; 
         border: 4px solid #333; 
-        box-shadow: 0 0 50px rgba(0, 255, 136, 0.2); 
-        image-rendering: pixelated; 
+        box-shadow: 0 0 50px rgba(0,0,0,0.5); 
+        overflow: hidden; /* Keeps the GIF inside */
     }
 
-    canvas { width: 100%; height: 100%; display: block; }
-    
+    canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+    /* THE PLAYER GIF OVERLAY */
+    #playerGif {
+        position: absolute;
+        width: 10%; /* Relative size to screen */
+        height: auto;
+        z-index: 5;
+        display: none; /* Hidden until game starts */
+        pointer-events: none;
+        image-rendering: pixelated; /* Keeps pixel art crisp */
+    }
+
     /* UI Overlay */
     .overlay { 
         position: absolute; top:0; left:0; width:100%; height:100%; 
         background: rgba(0,0,0,0.85); 
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        z-index: 20; transition: opacity 0.2s; 
+        z-index: 20; 
     }
     .hidden { opacity: 0; pointer-events: none; }
     
-    h1 { 
-        font-size: clamp(20px, 5vw, 40px); color: #3b8; text-shadow: 4px 4px #000; 
-        margin-bottom: 20px; line-height: 1.5; text-align: center; 
-    }
+    h1 { font-size: 40px; color: #fc0; text-shadow: 4px 4px #f00; margin-bottom: 20px; text-align: center; } 
+    .hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-size: 14px; color: #fff; z-index: 5; pointer-events: none; }
     
-    .hud { 
-        position: absolute; top: 10px; left: 10px; right: 10px; 
-        display: flex; justify-content: space-between; 
-        font-size: clamp(10px, 3vw, 16px); color: #fff; text-shadow: 2px 2px #000; 
-        z-index: 5; pointer-events: none; 
+    /* Mobile Fire Button */
+    .fire-btn { 
+        position: absolute; bottom: 30px; right: 30px; 
+        width: 80px; height: 80px; border-radius: 50%; 
+        background: rgba(255,0,0,0.5); border: 2px solid #f00; color:white; 
+        display:flex; align-items:center; justify-content:center; z-index:15; 
+        font-size: 12px;
     }
+    .fire-btn:active { background: #f00; }
 
-    /* Mobile Controls */
-    #mobileControls {
-        position: absolute; bottom: 20px; right: 20px;
-        z-index: 15; display: none; /* Shown via JS detection */
-    }
-    .fire-btn {
-        width: 80px; height: 80px;
-        border-radius: 50%;
-        background: rgba(255, 50, 50, 0.5);
-        border: 4px solid #f55;
-        color: white; font-size: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-family: inherit;
-        -webkit-tap-highlight-color: transparent;
-    }
-    .fire-btn:active { background: #f00; transform: scale(0.95); }
-    
-    input { 
-        background: #000; border: 2px solid #3b8; color: #3b8; 
-        padding: 10px; font-family: inherit; font-size: 16px; 
-        width: 250px; text-align: center; margin-top: 10px; 
-        text-transform: uppercase; 
-    }
-    
-    button.menu-btn { 
-        background: #3b8; color: #000; border: none; 
-        padding: 15px 20px; font-family: inherit; font-size: 14px; 
-        margin-top: 15px; cursor: pointer; border: 2px solid #fff; 
-        box-shadow: 0 4px 0 #000;
-    }
-    button.menu-btn:hover { transform: translateY(-2px); }
-    button.menu-btn:active { transform: translateY(2px); box-shadow: 0 0 0; }
+    input { background: #000; border: 2px solid #fc0; color: #fc0; padding: 10px; font-family: inherit; font-size: 16px; width: 250px; text-align: center; margin-top: 10px; text-transform: uppercase; }
+    button { background: #fc0; color: #000; border: none; padding: 15px 20px; font-family: inherit; font-size: 14px; margin-top: 15px; cursor: pointer; }
+    button:hover { background: #fff; }
 
-    #lbContainer {
-        margin-top: 20px; font-size: 10px; color: #888; text-align: left;
-        border: 1px solid #333; padding: 10px; background: #111; min-width: 250px;
-    }
-    .lb-row { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #222; padding-bottom: 2px;}
-    .lb-row span:last-child { color: #3b8; }
-    
-    .scanlines {
-        position: absolute; top:0; left:0; width:100%; height:100%;
-        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-        background-size: 100% 4px; pointer-events: none; z-index: 10;
-    }
 </style>
 </head>
 <body>
 
 <div id="gameWrapper">
     <div class="hud">
-        <span>SCORE: <span id="scoreVal">00000</span></span>
-        <span>LEVEL: <span id="lvlVal">1</span></span>
+        <span>SCORE: <span id="scoreVal">0</span></span>
+        <span>LVL: <span id="lvlVal">1</span></span>
     </div>
 
+    <img id="playerGif" src="player.gif" alt="Player">
+
     <div id="startScreen" class="overlay">
-        <h1>XENORUN<br><span style="font-size:0.6em; color:#fff;">ULTIMATE</span></h1>
-        <div style="text-align:center; font-size:10px; color:#aaa; line-height:2;">
-            CONTROLS:<br>
-            [SPACE] or [TAP L] = JUMP<br>
-            [X] or [TAP R] = FIRE PLASMA
+        <h1>XENORUN<br><span style="font-size:15px; color:#fff;">GIF EDITION</span></h1>
+        <div style="text-align:center; font-size:10px; color:#aaa; line-height:2; margin-bottom:20px;">
+            INSTRUCTIONS:<br>
+            1. NAME YOUR FILE 'player.gif'<br>
+            2. PLACE IN SAME FOLDER<br>
+            <br>
+            CONTROLS: [SPACE] JUMP | [X] SHOOT
         </div>
-        <button class="menu-btn" onclick="startGame()">INITIATE MISSION</button>
-        <div id="lbContainer">LOADING DATABASE...</div>
+        <button onclick="startGame()">START GAME</button>
+        <div style="margin-top:10px; font-size:10px; color:#666;" id="statusMsg">Checking for player.gif...</div>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
-        <h1 style="color:#e44;">M.I.A.</h1>
+        <h1 style="color:#e44;">GAME OVER</h1>
         <p>SCORE: <span id="finalScore">0</span></p>
-        <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="15">
-        <button class="menu-btn" onclick="submitScore()" id="subBtn">UPLOAD DATA</button>
-        <button class="menu-btn" onclick="resetGame()" style="background:#000; color:#fff;">RETRY</button>
+        <input type="text" id="playerName" placeholder="NAME" maxlength="15">
+        <button onclick="submitScore()" id="subBtn">SUBMIT</button>
+        <button onclick="location.reload()" style="background:#000; color:#fff; border:1px solid #fff;">RETRY</button>
     </div>
 
-    <div id="mobileControls">
-        <div class="fire-btn" id="mobFireBtn">FIRE</div>
-    </div>
-
+    <div class="fire-btn" id="mobFire">FIRE</div>
     <canvas id="c"></canvas>
-    <div class="scanlines"></div>
 </div>
 
 <script>
-/** 1. CONFIGURATION */
+// --- CONFIGURATION ---
 const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbyPAOLu61io_asry-ThXGVjqYbmCTN7DtvSvvAyl25J1DROrta614m_uXGTDMFqwomv/exec"; 
 
-const C = document.getElementById('c');
-const ctx = C.getContext('2d');
-// Internal Resolution (NES Style)
-const GAME_W = 320; 
-const GAME_H = 180;
-// We render small, CSS scales it up
-C.width = GAME_W; C.height = GAME_H;
-
-/** 2. SPRITE ENGINE (16x16 High Detail) */
-const PAL = { 
-    g: '#3b8', gD:'#164', // Greens
-    w: '#fff', 
-    s: '#fb8', // Skin
-    v: '#0ff', // Visor
-    r: '#e44', rD:'#911', // Reds
-    p: '#a4e', pD:'#516', // Purples
-    b: '#111', // Dark
-    y: '#fd0'  // Yellow
+// --- CHECK FOR GIF ---
+const pGif = document.getElementById('playerGif');
+pGif.onload = () => {
+    document.getElementById('statusMsg').innerText = "GIF FOUND! READY TO RUN.";
+    document.getElementById('statusMsg').style.color = "#0f0";
+};
+pGif.onerror = () => {
+    document.getElementById('statusMsg').innerText = "WARNING: player.gif NOT FOUND";
+    document.getElementById('statusMsg').style.color = "red";
 };
 
-// Character Map Decoder
-// 0=Empty, 1=GreenLight, 2=GreenDark, 3=Visor, 4=Skin, 5=Dark
-// A=PurpleLight, B=PurpleDark, C=RedLight, D=RedDark
-const MAPS = {
-    marineRun: [
-        "      11111     ", "     113331     ", "     113331     ", "     111111     ",
-        "      4444      ", "     222222     ", "    12222221    ", "   1 222222 1   ",
-        "   1 112211 1   ", "     1 22 1     ", "     1    1     ", "    11    11    ",
-        "   11      11   "
-    ],
-    alien: [ // Xenomorph
-        "         BBBB   ", "       BBBAAB   ", "      BBBAAAB   ", "     BBBBBAAB   ",
-        "    BBBBBBBB    ", "   BBBBBBBBB    ", "  B BBBBBB      ", " B  B    B      ",
-        " B  B    B      ", "BB BB   BB      "
-    ],
-    drone: [ // Flying
-        "      DDDD      ", "    DDCccCDD    ", "   DccyyyyccD   ", "  DccccccccD    ",
-        "  DccccccccD    ", "   DDDDDDDD     ", "    D    D      "
-    ],
-    sentinel: [ // Walking Tank
-        "      AAAA      ", "     ABBBBA     ", "    ABBAABBA    ", "    ABBAABBA    ",
-        "    BBBBBBBB    ", "    B B  B B    ", "   BB BB BB BB  ", "  BB  BB BB  BB "
-    ]
-};
-
-function makeSprite(mapStr, scale=1) {
-    const w = 16; const h = 13; // Max height in array
-    const cvs = document.createElement('canvas');
-    cvs.width = w; cvs.height = h;
-    const cx = cvs.getContext('2d');
-    
-    mapStr.forEach((row, y) => {
-        for(let x=0; x<row.length; x++) {
-            let c = row[x];
-            let col = null;
-            if(c==='1') col=PAL.g; if(c==='2') col=PAL.gD; if(c==='3') col=PAL.v;
-            if(c==='4') col=PAL.s; if(c==='A') col=PAL.p; if(c==='B') col=PAL.pD;
-            if(c==='C') col=PAL.r; if(c==='D') col=PAL.rD; if(c==='c') col=PAL.r;
-            if(c==='y') col=PAL.y;
-            
-            if(col) { cx.fillStyle = col; cx.fillRect(x, y, 1, 1); }
-        }
-    });
-    return cvs;
-}
-
-const IMG = {
-    marine: makeSprite(MAPS.marineRun),
-    alien: makeSprite(MAPS.alien),
-    drone: makeSprite(MAPS.drone),
-    sentinel: makeSprite(MAPS.sentinel)
-};
-
-/** 3. AUDIO ENGINE (Music Sequencer) */
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const actx = new AudioContext();
-
-const MUSIC = {
-    bass: [110, 0, 110, 0, 130, 0, 98, 98, 110, 0, 110, 110, 87, 0, 87, 82],
-    lead: [0, 0, 440, 0, 0, 523, 0, 0, 0, 440, 392, 0, 0, 329, 0, 0],
-    step: 0,
-    tick: function() {
-        if(frames % (Math.floor(12 - difficulty*0.5)) === 0) { // Tempo increases with difficulty
-            this.step = (this.step + 1) % 16;
-            if(this.bass[this.step]) SFX.tone(this.bass[this.step], 'triangle', 0.1, 0.3);
-            if(this.lead[this.step]) SFX.tone(this.lead[this.step], 'square', 0.1, 0.08);
-        }
+// --- AUDIO ---
+const Actx = window.AudioContext||window.webkitAudioContext; const actx = new Actx();
+const SFX = {
+    play: (f,t,d,v=0.1) => {
+        if(actx.state==='suspended')actx.resume();
+        const o=actx.createOscillator(), g=actx.createGain();
+        o.type=t; o.frequency.value=f; g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+d);
+    },
+    boom: () => {
+        const b=actx.createBuffer(1, actx.sampleRate*0.2, actx.sampleRate);
+        const d=b.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+        const s=actx.createBufferSource(); s.buffer=b; 
+        const g=actx.createGain(); g.gain.value=0.2; g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+0.2);
+        s.connect(g); g.connect(actx.destination); s.start();
     }
 };
 
-const SFX = {
-    tone: (f, t, d, v) => {
-        if(actx.state==='suspended') actx.resume();
-        const o=actx.createOscillator(); const g=actx.createGain();
-        o.type=t; o.frequency.value=f;
-        g.gain.setValueAtTime(v, actx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+d);
-        o.connect(g); g.connect(actx.destination);
-        o.start(); o.stop(actx.currentTime+d);
-    },
-    jump: () => {
-        const o=actx.createOscillator(); const g=actx.createGain();
-        o.frequency.setValueAtTime(100, actx.currentTime);
-        o.frequency.linearRampToValueAtTime(300, actx.currentTime+0.2);
-        g.gain.setValueAtTime(0.1, actx.currentTime);
-        g.gain.linearRampToValueAtTime(0, actx.currentTime+0.2);
-        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+0.2);
-    },
-    shoot: () => {
-        const o=actx.createOscillator(); const g=actx.createGain();
-        o.type='sawtooth';
-        o.frequency.setValueAtTime(800, actx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(100, actx.currentTime+0.1);
-        g.gain.setValueAtTime(0.1, actx.currentTime);
-        g.gain.linearRampToValueAtTime(0, actx.currentTime+0.1);
-        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+0.1);
-    },
-    explode: () => {
-        const b=actx.createBuffer(1, actx.sampleRate*0.2, actx.sampleRate);
-        const d=b.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
-        const s=actx.createBufferSource(); s.buffer=b;
-        const g=actx.createGain(); g.gain.value=0.2; g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+0.2);
-        s.connect(g); g.connect(actx.destination); s.start();
-    },
-    hit: () => SFX.tone(100, 'sawtooth', 0.3, 0.2)
+// --- GAME LOGIC ---
+const C = document.getElementById('c'), ctx = C.getContext('2d');
+// Internal resolution (NES Style)
+const W = 320; 
+const H = 180;
+C.width = W; C.height = H;
+
+let state='MENU', frames=0, score=0, difficulty=1, player={x:30,y:120,dy:0,grounded:true};
+let entities=[], bullets=[], stars=[];
+
+// Init Stars
+for(let i=0;i<40;i++)stars.push({x:Math.random()*W,y:Math.random()*120,s:Math.random()>0.8?2:1});
+
+// Code-generated Enemies
+const PAL = { p:'#a4e', r:'#e44', w:'#fff' };
+const MAPS = {
+    alien: ["  444 "," 44444","444544","44444 "," 4  4 ","4 44 4"],
+    drone: [" 4444 ","445544","444444"," 4  4 "]
 };
+function makeSprite(map) {
+    const cvs = document.createElement('canvas'); cvs.width=16; cvs.height=16;
+    const cx=cvs.getContext('2d');
+    map.forEach((r,y)=>{ for(let x=0;x<r.length;x++) {
+        let c=r[x]; if(c==='4')cx.fillStyle=PAL.p; if(c==='5')cx.fillStyle=PAL.r;
+        if(c!==' ')cx.fillRect(x*2,y*2,2,2);
+    }}); return cvs;
+}
+const IMG = { alien: makeSprite(MAPS.alien), drone: makeSprite(MAPS.drone) };
 
-/** 4. GAME VARIABLES */
-let state = 'MENU';
-let frames = 0, score = 0, difficulty = 1;
-let bgX = 0;
-let player = { x: 30, y: 120, dy: 0, grounded: true, w:12, h:14 }; // Adjusted hitbox
-let entities = [], bullets = [], particles = [], stars = [];
-
-// Stars Init
-for(let i=0; i<40; i++) stars.push({x:Math.random()*GAME_W, y:Math.random()*120, s:Math.random()>0.8?2:1});
 
 function startGame() {
-    state = 'PLAYING';
-    score = 0; frames = 0; difficulty = 1;
-    entities = []; bullets = []; particles = [];
-    player.y = 120; player.dy = 0; player.grounded = true;
+    state='PLAYING'; score=0; frames=0; difficulty=1; entities=[]; bullets=[];
     document.getElementById('startScreen').classList.add('hidden');
-    document.getElementById('gameOverScreen').classList.add('hidden');
-    if(isMobile()) document.getElementById('mobileControls').style.display = 'block';
-    actx.resume();
+    // Show the GIF
+    pGif.style.display = "block";
     loop();
 }
 
 function loop() {
-    if(state !== 'PLAYING') return;
-
-    // --- LOGIC ---
-    frames++;
-    MUSIC.tick();
-
-    // Scaling Difficulty
-    score++;
-    if(score % 500 === 0) { difficulty++; SFX.tone(600,'square',0.5,0.1); } // Level Up Sound
+    if(state!=='PLAYING') return;
+    frames++; score++;
+    if(score%500===0) difficulty++;
     document.getElementById('scoreVal').innerText = score.toString().padStart(5,'0');
     document.getElementById('lvlVal').innerText = difficulty;
-    
-    let moveSpeed = 1.5 + (difficulty * 0.2);
-    if(moveSpeed > 5) moveSpeed = 5;
 
-    // Player Physics
-    player.dy += 0.25; // Gravity
-    player.y += player.dy;
-    
-    // Floor
-    const floorY = GAME_H - 20;
-    if(player.y + player.h >= floorY) {
-        player.y = floorY - player.h;
-        player.dy = 0;
-        player.grounded = true;
-    } else {
-        player.grounded = false;
+    let speed = 2 + (difficulty*0.2); if(speed>6) speed=6;
+
+    // Physics
+    player.dy += 0.25; player.y += player.dy;
+    // Floor collision
+    if(player.y >= 135) { player.y=135; player.dy=0; player.grounded=true; } else player.grounded=false;
+
+    // UPDATE GIF POSITION (Use Percentages to match Canvas)
+    // Convert game coordinates (320x180) to CSS percentages
+    pGif.style.left = (player.x / W * 100) + '%';
+    pGif.style.top = ((player.y - 10) / H * 100) + '%'; // -10 offset for GIF height
+
+    // Spawning
+    if(frames % Math.floor(100-(difficulty*5)) === 0) {
+        let type = Math.random()>0.7 ? 'drone' : 'alien';
+        entities.push({type:type, x:W, y:type==='drone'?100:135, w:12, h:12, dead:false});
     }
 
-    // Spawning (More variety)
-    let spawnRate = Math.max(40, 100 - (difficulty * 5));
-    if(frames % spawnRate === 0) {
-        let r = Math.random();
-        let type = 'alien';
-        let y = floorY - 13;
-        let hp = 1;
-        
-        if(difficulty > 1 && r > 0.7) { type = 'drone'; y = floorY - 40 - Math.random()*30; }
-        if(difficulty > 3 && r > 0.9) { type = 'sentinel'; hp = 2; } // Tanky enemy
-        
-        entities.push({ type:type, x:GAME_W, y:y, w:14, h:13, dead:false, hp:hp, bob:0 });
-    }
-
-    // --- DRAW ---
-    ctx.fillStyle = '#050510'; 
-    ctx.fillRect(0,0,GAME_W,GAME_H); // Clear
-
-    // Background Stars (Parallax)
-    ctx.fillStyle = (difficulty > 4) ? '#202' : '#fff'; // Sky turns purple at lvl 5
-    stars.forEach(s => {
-        s.x -= moveSpeed * (s.s===2 ? 0.5 : 0.2);
-        if(s.x < 0) s.x = GAME_W;
-        ctx.fillRect(s.x, s.y, s.s, s.s);
-    });
+    // DRAW
+    ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H); // BG
+    
+    // Stars
+    ctx.fillStyle='#fff'; stars.forEach(s=>{ s.x-=speed*(s.s===2?0.5:0.2); if(s.x<0)s.x=W; ctx.fillRect(s.x,s.y,s.s,s.s); });
 
     // Floor
-    ctx.fillStyle = '#222'; ctx.fillRect(0, floorY, GAME_W, 20);
-    ctx.fillStyle = '#3b8'; ctx.fillRect(0, floorY, GAME_W, 1);
-    
-    // Player
-    let bob = (player.grounded && Math.floor(frames/6)%2===0) ? 1 : 0;
-    ctx.drawImage(IMG.marine, player.x, player.y + bob);
+    ctx.fillStyle='#333'; ctx.fillRect(0,150,W,30); ctx.fillStyle='#fc0'; ctx.fillRect(0,150,W,2);
 
     // Entities
-    entities.forEach(e => {
-        e.x -= moveSpeed * (e.type==='drone'?1.3:1);
-        if(e.type==='drone') e.y += Math.sin(frames*0.1)*0.5; // Drone bobbing
-        
+    entities.forEach(e=>{
+        e.x -= speed;
         ctx.drawImage(IMG[e.type], e.x, e.y);
-        
-        // Player Collision
-        if(!e.dead && rectCol(player, e)) gameOver();
+        // Collision
+        if(!e.dead && player.x < e.x+10 && player.x+10 > e.x && player.y < e.y+10 && player.y+10 > e.y) gameOver();
     });
 
     // Bullets
-    bullets.forEach(b => {
-        b.x += 4;
-        ctx.fillStyle = '#ff0'; ctx.fillRect(b.x, b.y, 4, 1);
-        
-        entities.forEach(e => {
-            if(!e.dead && !b.dead && rectCol(b, e)) {
-                b.dead = true;
-                e.hp--;
-                SFX.hit();
-                if(e.hp <= 0) {
-                    e.dead = true;
-                    score += (e.type==='sentinel'?300:100);
-                    SFX.explode();
-                    spawnParticles(e.x+7, e.y+7, PAL.p);
-                } else {
-                    spawnParticles(e.x+7, e.y+7, PAL.w); // Armor hit
-                }
+    bullets.forEach(b=>{
+        b.x+=4; ctx.fillStyle='#ff0'; ctx.fillRect(b.x,b.y,4,2);
+        entities.forEach(e=>{
+            if(!e.dead && !b.dead && b.x < e.x+12 && b.x+4 > e.x && b.y < e.y+12 && b.y+2 > e.y) {
+                e.dead=true; b.dead=true; score+=100; SFX.boom();
             }
         });
     });
 
-    // Cleanup
-    entities = entities.filter(e => e.x > -20 && !e.dead);
-    bullets = bullets.filter(b => b.x < GAME_W && !b.dead);
-    
-    // Particles
-    particles.forEach(p => {
-        p.x += p.vx; p.y += p.vy; p.life--;
-        ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 1, 1);
-    });
-    particles = particles.filter(p => p.life > 0);
+    entities = entities.filter(e=>e.x>-20 && !e.dead);
+    bullets = bullets.filter(b=>b.x<320 && !b.dead);
 
     requestAnimationFrame(loop);
 }
 
-function rectCol(r1, r2) {
-    return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x &&
-            r1.y < r2.y + r2.h && r1.y + r1.h > r2.y);
-}
-
-function spawnParticles(x, y, c) {
-    for(let i=0; i<6; i++) particles.push({x:x, y:y, vx:(Math.random()-.5)*2, vy:(Math.random()-.5)*2, life:20, c:c});
-}
-
 function gameOver() {
-    state = 'GAMEOVER';
-    SFX.explode();
-    document.getElementById('finalScore').innerText = score;
+    state='GAMEOVER'; SFX.play(50,'sawtooth',0.5);
+    document.getElementById('finalScore').innerText=score;
     document.getElementById('gameOverScreen').classList.remove('hidden');
-    document.getElementById('mobileControls').style.display = 'none';
+    pGif.style.display = "none"; // Hide GIF on death
 }
 
-function resetGame() { startGame(); }
-function isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+function jump() { if(player.grounded) { player.dy=-4.5; player.grounded=false; SFX.play(200,'square',0.1); } }
+function shoot() { bullets.push({x:player.x+10, y:player.y+8, dead:false}); SFX.play(600,'square',0.05); }
 
-/** 5. INPUTS */
-function jump() {
-    if(state === 'MENU' || state === 'GAMEOVER') startGame();
-    else if(state === 'PLAYING' && player.grounded) {
-        player.dy = -4.5; // Jump power
-        player.grounded = false;
-        SFX.jump();
-    }
-}
-function shoot() {
-    if(state === 'PLAYING') {
-        bullets.push({x:player.x+10, y:player.y+6, w:4, h:1, dead:false});
-        SFX.shoot();
-    }
-}
-
-// Keyboard
-window.addEventListener('keydown', e => {
-    if(e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
-    if(e.code === 'KeyX') { e.preventDefault(); shoot(); }
+// Controls
+window.addEventListener('keydown', e=>{ if(e.code==='Space')jump(); if(e.code==='KeyX')shoot(); });
+document.getElementById('gameWrapper').addEventListener('touchstart', e=>{
+    if(e.target.id!=='mobFire' && e.target.tagName!=='BUTTON') jump();
 });
+document.getElementById('mobFire').addEventListener('mousedown', (e)=>{ e.stopPropagation(); shoot(); });
+document.getElementById('mobFire').addEventListener('touchstart', (e)=>{ e.stopPropagation(); e.preventDefault(); shoot(); });
 
-// Touch / Mouse
-document.getElementById('gameWrapper').addEventListener('touchstart', (e) => {
-    if(e.target.id === 'mobFireBtn') {
-        e.preventDefault(); shoot();
-    } else if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
-        e.preventDefault(); jump();
-    }
-}, {passive: false});
-
-document.getElementById('mobFireBtn').addEventListener('mousedown', (e) => {
-    e.preventDefault(); shoot(); // Desktop testing for fire button
-});
-
-/** 6. LEADERBOARD */
-async function loadLB() {
-    try {
-        const res = await fetch(LEADERBOARD_URL);
-        const data = await res.json();
-        const top5 = data.sort((a,b) => b[1] - a[1]).slice(0, 5);
-        let html = "";
-        top5.forEach((row, i) => html += `<div class="lb-row"><span>#${i+1} ${row[0]}</span><span>${row[1]}</span></div>`);
-        document.getElementById('lbContainer').innerHTML = "TOP AGENTS:<br>" + html;
-    } catch(e) { document.getElementById('lbContainer').innerHTML = "OFFLINE MODE"; }
-}
-
+// Leaderboard
 async function submitScore() {
-    const name = document.getElementById('playerName').value;
-    if(!name) return alert("ENTER NAME");
+    let n = document.getElementById('playerName').value; if(!n) return alert("NAME?");
     document.getElementById('subBtn').innerText = "...";
     try {
-        await fetch(LEADERBOARD_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ name: name, score: score }) });
-        alert("UPLOADED!"); location.reload();
+        await fetch(LEADERBOARD_URL, {method:'POST', mode:'no-cors', body:JSON.stringify({name:n, score:score})});
+        alert("SENT"); location.reload();
     } catch(e) { alert("ERROR"); }
 }
-
-loadLB();
-
 </script>
 </body>
 </html>
