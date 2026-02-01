@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SPRINGFIELD HORROR RUN</title>
+<title>ULTIMATE CROSSOVER RUN</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
     
@@ -11,7 +11,7 @@
     
     body { 
         margin: 0; 
-        background: #FFD90F; /* Simpsons Yellow */
+        background: #222; 
         overflow: hidden; 
         font-family: 'Bangers', cursive; 
         display: flex; justify-content: center; align-items: center; 
@@ -22,9 +22,9 @@
         position: relative; 
         width: 100%; max-width: 854px; 
         aspect-ratio: 16/9;
-        background: #42a4f5; 
-        border: 6px solid #000; 
-        box-shadow: 10px 10px 0px rgba(0,0,0,0.2); 
+        background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Sunset Vibe */
+        border: 4px solid #fff; 
+        box-shadow: 0 0 50px rgba(0,0,0,0.5); 
         overflow: hidden; 
     }
 
@@ -35,16 +35,22 @@
         position: absolute;
         pointer-events: none;
         image-rendering: pixelated; 
-        transform: translate(-50%, -50%);
-        z-index: 5;
+        transform: translate(-50%, -50%); /* Centered Anchor */
+        z-index: 10;
+    }
+
+    /* BLEND MODE FIX (Removes White Backgrounds) */
+    .enemy-gif {
+        mix-blend-mode: multiply; 
+        filter: contrast(1.1) brightness(1.1); 
     }
     
-    #playerGif { z-index: 10; height: 18%; width: auto; }
+    #playerGif { z-index: 20; height: 18%; width: auto; }
     
-    /* UI ELEMENTS */
+    /* UI */
     .overlay { 
         position: absolute; top:0; left:0; width:100%; height:100%; 
-        background: rgba(0,0,0,0.7); 
+        background: rgba(0,0,0,0.85); 
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
         z-index: 50; 
     }
@@ -52,53 +58,52 @@
     
     h1 { 
         font-size: clamp(40px, 8vw, 80px); 
-        color: #FFD90F; 
-        -webkit-text-stroke: 3px black;
-        text-shadow: 5px 5px #000; 
+        color: #ffcc00; 
+        -webkit-text-stroke: 2px black;
+        text-shadow: 5px 5px 0 #a00; 
         margin: 0; line-height: 1; 
-        transform: rotate(-3deg);
+        transform: rotate(-2deg);
     }
     
     .hud { 
         position: absolute; top: 15px; left: 20px; right: 20px; 
         display: flex; justify-content: space-between; 
         font-size: 24px; color: #fff; 
-        text-shadow: 3px 3px 0 #000;
+        text-shadow: 2px 2px 0 #000;
         z-index: 40; pointer-events: none; 
     }
     
     .fire-btn { 
         position: absolute; bottom: 30px; right: 30px; 
         width: 90px; height: 90px; border-radius: 50%; 
-        background: #FFD90F; border: 4px solid #000; 
-        color:black; font-size: 20px; display:flex; 
+        background: rgba(255, 200, 0, 0.8); border: 3px solid #fff; 
+        color:#000; font-size: 20px; display:flex; 
         align-items:center; justify-content:center; z-index:45; 
-        box-shadow: 4px 4px 0 #000;
+        box-shadow: 0 5px 0 #b80;
     }
-    .fire-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+    .fire-btn:active { transform: translateY(5px); box-shadow: none; }
 
     input { 
-        background: #fff; border: 4px solid #000; color: #000; 
+        background: #fff; border: 3px solid #000; color: #000; 
         padding: 10px; font-family: inherit; font-size: 20px; 
         width: 300px; text-align: center; margin-top: 20px; 
         text-transform: uppercase; 
     }
     
     button.menu-btn { 
-        background: #FFD90F; color: #000; border: 4px solid #000; 
+        background: #ffcc00; color: #000; border: 3px solid #000; 
         padding: 10px 30px; font-family: inherit; font-size: 24px; 
         margin-top: 15px; cursor: pointer; 
-        box-shadow: 6px 6px 0 #000; transition: transform 0.1s;
+        box-shadow: 5px 5px 0 #000; transition: transform 0.1s;
     }
     button.menu-btn:hover { transform: scale(1.05); }
 
     #lbContainer {
         margin-top: 20px; font-size: 16px; color: #fff; text-align: left;
-        background: rgba(0,0,0,0.8); padding: 15px; border: 2px solid #FFD90F;
-        border-radius: 10px; min-width: 300px;
+        background: #333; padding: 15px; min-width: 300px; border: 2px solid #fff;
     }
-    .lb-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #555;}
-    .lb-row span:last-child { color: #FFD90F; }
+    .lb-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #555; padding-bottom: 2px;}
+    .lb-row span:last-child { color: #ffcc00; }
 
     #asset-pool { display: none; }
 </style>
@@ -109,10 +114,14 @@
 
 <div id="asset-pool">
     <img id="src_player" src="player.gif">
+    <img id="src_creature" src="creature.gif">
+    <img id="src_bowser" src="bowser.gif">
     <img id="src_devil" src="devil.gif">
-    <img id="src_monster" src="monster.gif">
-    <img id="src_ninja" src="ninja.gif">
+    <img id="src_knight" src="knight.gif">
     <img id="src_ufo" src="ufo.gif">
+    <img id="src_bob" src="bob.gif">
+    <img id="src_burns" src="burns.gif">
+    <img id="src_nelson" src="nelson.gif">
 </div>
 
 <div id="gameWrapper">
@@ -122,27 +131,29 @@
     </div>
 
     <img id="playerGif" class="game-entity" src="player.gif">
+    
     <div id="enemyLayer"></div>
 
     <div id="startScreen" class="overlay">
-        <h1>SPRINGFIELD<br>HORROR RUN</h1>
-        <div style="text-align:center; font-size:18px; color:#fff; text-shadow:2px 2px #000; margin-top:10px;">
-            [SPACE] JUMP / DOUBLE JUMP<br>[X] SLINGSHOT
+        <h1>CROSSOVER<br>RUNNER</h1>
+        <div style="text-align:center; font-size:16px; color:#ddd; margin-top:15px; font-family:sans-serif;">
+            BART VS. THE MULTIVERSE<br><br>
+            [SPACE] JUMP / DOUBLE JUMP<br>[X] FIRE WEAPON
         </div>
-        <button class="menu-btn" onclick="startGame()">START GAME</button>
+        <button class="menu-btn" onclick="startGame()">LET'S GO!</button>
         <div id="lbContainer">LOADING...</div>
-        <div id="statusMsg" style="font-size:12px; color:#ddd; margin-top:10px;">Checking Assets...</div>
+        <div id="statusMsg" style="font-size:10px; color:#aaa; margin-top:10px;">LOADING ASSETS...</div>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
-        <h1 style="color:#FF4444; transform:rotate(3deg);">AY CARAMBA!</h1>
-        <p style="color:#fff; font-size:24px; text-shadow:2px 2px #000;">SCORE: <span id="finalScore">0</span></p>
-        <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="15">
-        <button class="menu-btn" onclick="submitScore()" id="subBtn">SAVE SCORE</button>
+        <h1 style="color:#ff4444; transform:rotate(3deg);">GAME OVER</h1>
+        <p style="color:#fff; font-size:24px;">SCORE: <span id="finalScore">0</span></p>
+        <input type="text" id="playerName" placeholder="NAME" maxlength="15">
+        <button class="menu-btn" onclick="submitScore()" id="subBtn">SUBMIT</button>
         <button class="menu-btn" onclick="location.reload()" style="background:#fff;">RETRY</button>
     </div>
 
-    <div class="fire-btn" id="mobFire">POW</div>
+    <div class="fire-btn" id="mobFire">FIRE</div>
     <canvas id="c"></canvas>
 </div>
 
@@ -151,28 +162,28 @@ const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbyPAOLu61io_asr
 
 // --- ASSET CHECK ---
 window.onload = () => {
-    const assets = ['player','devil','monster','ninja','ufo'];
+    const assets = ['player','creature','bowser','devil','knight','ufo','bob','burns','nelson'];
     let loaded = 0;
     assets.forEach(a => {
         const img = document.getElementById('src_'+a);
         if(img.complete && img.naturalHeight !== 0) loaded++;
     });
     
-    // Check Audio
+    // Audio Init
     const aud = document.getElementById('bgMusic');
-    aud.volume = 0.5; // Set volume to 50%
+    aud.volume = 0.4;
     
     const status = document.getElementById('statusMsg');
-    if(loaded === 5) {
-        status.innerText = "ALL ASSETS LOADED.";
+    if(loaded === assets.length) {
+        status.innerText = "ALL CHARACTERS LOADED.";
         status.style.color = "#4f4";
     } else {
-        status.innerText = "WARNING: GIFS MISSING. CHECK FILENAMES.";
+        status.innerText = `WARNING: ${assets.length - loaded} GIFS MISSING.`;
         status.style.color = "#f44";
     }
 };
 
-// --- SFX ENGINE (Just Sound Effects now) ---
+// --- SFX ---
 const Actx = window.AudioContext||window.webkitAudioContext; const actx = new Actx();
 const SFX = {
     play: (f,t,d,v=0.1, slide=0) => {
@@ -185,30 +196,32 @@ const SFX = {
         o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+d);
     },
     jump: () => SFX.play(200, 'triangle', 0.2, 0.1, 150),
-    shoot: () => SFX.play(600, 'sawtooth', 0.1, 0.1, -300)
+    shoot: () => SFX.play(800, 'sawtooth', 0.1, 0.05, -600), 
+    hit: () => SFX.play(100, 'square', 0.1, 0.2),
+    crash: () => SFX.play(50, 'sawtooth', 0.6, 0.4, -20)
 };
 
-// --- GAME LOGIC ---
+// --- GAME SETUP ---
 const C = document.getElementById('c'), ctx = C.getContext('2d');
 const W = 854, H = 480;
 C.width = W; C.height = H;
 
 let state='MENU', frames=0, score=0, difficulty=1;
 let player = { x:100, y:350, dy:0, grounded:true, jumps:0 };
-let enemies = [], bullets = [], clouds = [];
+let enemies = [], bullets = [], stars = [];
 
-// Init Clouds
-for(let i=0; i<10; i++) clouds.push({x:Math.random()*W, y:Math.random()*200, s:Math.random()*0.5+0.5});
+// Init Background
+for(let i=0; i<40; i++) stars.push({x:Math.random()*W, y:Math.random()*H, s:Math.random()*2});
 
 function startGame() {
     state='PLAYING'; score=0; frames=0; difficulty=1;
     enemies.forEach(e => e.el.remove()); 
     enemies=[]; bullets=[];
     
-    // Play Music
+    // Attempt Music Play
     const music = document.getElementById('bgMusic');
-    music.currentTime = 0;
-    music.play().catch(e => console.log("Audio play failed (user didn't interact?)"));
+    music.currentTime = 0; 
+    music.play().catch(e=>console.log("Music blocked until interact"));
     
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('playerGif').style.display = 'block';
@@ -221,50 +234,58 @@ function loop() {
     
     // Difficulty
     if(score%500===0) difficulty++;
-    let speed = 5 + (difficulty * 0.5);
-    if(speed > 15) speed = 15;
+    let speed = 6 + (difficulty * 0.5);
+    if(speed > 18) speed = 18; // Max Speed Cap
     
     document.getElementById('scoreVal').innerText = score;
-    document.getElementById('spdVal').innerText = Math.floor((speed/5)*100) + "%";
+    document.getElementById('spdVal').innerText = Math.floor((speed/6)*100) + "%";
 
     // --- PHYSICS ---
     player.dy += 0.8; // Gravity
     player.y += player.dy;
     
-    // Ground
     let floorY = 380;
     if (player.y >= floorY) {
         player.y = floorY; 
         player.dy = 0; 
         player.grounded = true;
-        player.jumps = 0; // Reset double jump
+        player.jumps = 0; 
     }
 
     // --- SPAWNING ---
-    let spawnRate = Math.max(50, 110 - (difficulty * 4));
+    // The "All Characters" Pool
+    let spawnRate = Math.max(45, 100 - (difficulty * 4));
     if(frames % spawnRate === 0) {
-        let r = Math.random();
-        let type = 'monster'; 
+        
+        const pool = [
+            { id:'creature', h:16, hp:1 },
+            { id:'nelson', h:16, hp:1 },
+            { id:'bob', h:22, hp:1 },
+            { id:'devil', h:18, hp:1 },
+            { id:'knight', h:18, hp:2 }, // Tanky
+            { id:'bowser', h:25, hp:3 }, // Boss
+            { id:'ufo', h:12, hp:1, fly:true },
+            { id:'burns', h:14, hp:1 }
+        ];
+
+        // Random Pick
+        let pick = pool[Math.floor(Math.random() * pool.length)];
+        
         let y = floorY + 10;
-        
-        if(r > 0.3) type = 'devil';
-        if(r > 0.6) type = 'ninja';
-        if(r > 0.85) { type = 'ufo'; y = floorY - 60 - Math.random()*50; } // Flying
-        
+        if(pick.fly) y = floorY - 80 - Math.random()*60;
+
         let img = document.createElement('img');
-        img.src = type + '.gif';
-        img.className = 'game-entity';
-        
-        // Sizing
-        if(type==='ufo') img.style.height = '14%'; 
-        else img.style.height = '18%'; 
+        img.src = pick.id + '.gif';
+        img.className = 'game-entity enemy-gif'; // Apply blend mode
+        img.style.height = pick.h + '%';
         
         document.getElementById('enemyLayer').appendChild(img);
         
         enemies.push({
-            type: type,
+            type: pick.id,
             x: W, y: y,
-            w: 50, h: 80,
+            w: 50, h: 70, // Base visual size
+            hp: pick.hp,
             el: img,
             dead: false
         });
@@ -273,68 +294,93 @@ function loop() {
     // --- DRAWING ---
     ctx.clearRect(0,0,W,H);
     
-    // Clouds
+    // Background Stars (Moving)
     ctx.fillStyle = '#fff';
-    clouds.forEach(c => {
-        c.x -= speed * 0.1 * c.s;
-        if(c.x < -100) c.x = W + 100;
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, 30*c.s, 0, Math.PI*2);
-        ctx.arc(c.x+20*c.s, c.y-10*c.s, 40*c.s, 0, Math.PI*2);
-        ctx.fill();
+    stars.forEach(s => {
+        s.x -= speed * 0.1; 
+        if(s.x < 0) s.x = W;
+        ctx.globalAlpha = Math.random();
+        ctx.fillRect(s.x, s.y, s.s, s.s);
     });
+    ctx.globalAlpha = 1.0;
 
     // Floor
-    ctx.fillStyle = '#999'; ctx.fillRect(0, floorY + 40, W, H - floorY); 
-    ctx.fillStyle = '#4d4'; ctx.fillRect(0, floorY + 35, W, 5); 
+    ctx.fillStyle = '#111'; ctx.fillRect(0, floorY + 40, W, H - floorY); 
+    ctx.fillStyle = '#ff9900'; ctx.fillRect(0, floorY + 35, W, 5); // Orange line
 
-    // Update Player GIF
+    // Player Visual Update
     const pGif = document.getElementById('playerGif');
     pGif.style.left = player.x + 'px';
     pGif.style.top = (player.y - 20) + 'px';
 
-    // Enemies
+    // --- ENEMY LOGIC & HITBOXES ---
     enemies.forEach(e => {
         e.x -= speed;
         
-        // Dead logic: Fall through floor
         if(e.dead) {
-            e.y += 5; // Fall down
-            e.el.style.opacity = parseFloat(e.el.style.opacity || 1) - 0.05;
+            e.y += 8; // Fall fast when dead
+            e.el.style.opacity = parseFloat(e.el.style.opacity || 1) - 0.1;
         }
 
         e.el.style.left = e.x + 'px';
         e.el.style.top = (e.y - 30) + 'px'; 
         
-        // Collision (Only if alive)
+        // --- HITBOX LOGIC (SMALLER THAN IMAGE) ---
+        // Visual Image is e.w wide. We only want to collide with the center.
+        let hitX = e.x - 15; // Shift hitbox left slightly
+        let hitW = 30;       // Narrow hitbox width
+        let hitY = e.y - 60; // Top of hitbox relative to anchor
+        let hitH = 60;       // Height of hitbox
+
+        // Draw Debug Box (Uncomment next line to see hitboxes)
+        // ctx.strokeStyle='red'; ctx.strokeRect(hitX, hitY, hitW, hitH);
+
         if(!e.dead) {
-            if( player.x < e.x + 30 && player.x + 30 > e.x &&
-                player.y < e.y + 10 && player.y + 70 > e.y - 50 ) {
+            // Player vs Enemy Hitbox
+            if( player.x + 10 < hitX + hitW && 
+                player.x + 30 > hitX &&
+                player.y < hitY + hitH && 
+                player.y + 70 > hitY ) {
                 gameOver();
             }
         }
     });
 
-    // Bullets
+    // --- BULLETS ---
     bullets.forEach(b => {
-        b.x += 10;
-        ctx.fillStyle = 'red';
-        ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill();
+        b.x += 15;
+        ctx.fillStyle = '#0ff'; 
+        ctx.fillRect(b.x, b.y, 15, 3);
         
-        // Hit Check
+        // Bullet vs Enemy Hitbox
         enemies.forEach(e => {
-            if(!e.dead && !b.dead && b.x > e.x - 20 && b.x < e.x + 20 && b.y > e.y - 80 && b.y < e.y) {
-                e.dead = true;
-                b.dead = true;
-                score += 100;
-                SFX.play(100, 'square', 0.1); 
+            if(!e.dead && !b.dead) {
+                // Using same smaller hitbox logic
+                let hitX = e.x - 20;
+                let hitW = 40;
+                let hitY = e.y - 70;
+                let hitH = 70;
+
+                if( b.x < hitX + hitW && b.x + 15 > hitX && b.y < hitY + hitH && b.y + 3 > hitY) {
+                    b.dead = true;
+                    e.hp--;
+                    if(e.hp <= 0) {
+                        e.dead = true;
+                        score += 200;
+                        SFX.play(100, 'noise', 0.2); // Boom
+                    } else {
+                        SFX.hit(); // Tink
+                        e.el.style.filter = "brightness(500%)"; // Flash
+                        setTimeout(()=>e.el.style.filter = "contrast(1.1) brightness(1.1) multiply", 50);
+                    }
+                }
             }
         });
     });
 
     // Cleanup
     enemies = enemies.filter(e => {
-        if(e.x < -100 || e.y > H + 100) { e.el.remove(); return false; }
+        if(e.x < -150 || e.y > H + 200) { e.el.remove(); return false; }
         return true;
     });
     bullets = bullets.filter(b => b.x < W);
@@ -344,15 +390,15 @@ function loop() {
 
 function gameOver() {
     state='GAMEOVER'; 
-    document.getElementById('bgMusic').pause(); // Stop music
-    SFX.play(100, 'sawtooth', 0.5, 0.3, -50); // Fail sound
+    document.getElementById('bgMusic').pause();
+    SFX.crash();
     document.getElementById('finalScore').innerText=score;
     document.getElementById('gameOverScreen').classList.remove('hidden');
 }
 
 function jump() { 
     if(player.grounded || player.jumps < 2) { 
-        player.dy = -13; 
+        player.dy = -14; 
         player.grounded = false; 
         player.jumps++;
         SFX.jump(); 
@@ -384,7 +430,7 @@ async function submitScore() {
     document.getElementById('subBtn').innerText = "...";
     try {
         await fetch(LEADERBOARD_URL, {method:'POST', mode:'no-cors', body:JSON.stringify({name:n, score:score})});
-        alert("SCORE SAVED!"); location.reload();
+        alert("SAVED!"); location.reload();
     } catch(e) { alert("ERROR"); }
 }
 
@@ -393,7 +439,7 @@ async function loadLB() {
         let r = await fetch(LEADERBOARD_URL);
         let d = await r.json();
         let h = d.sort((a,b)=>b[1]-a[1]).slice(0,5).map(r=>`<div class="lb-row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
-        document.getElementById('lbContainer').innerHTML = "TOP 5:<br>" + h;
+        document.getElementById('lbContainer').innerHTML = "LEGENDS:<br>" + h;
     } catch(e){ document.getElementById('lbContainer').innerText = "LB OFFLINE"; }
 }
 loadLB();
