@@ -2,59 +2,98 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XENORUN: OMEGA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>XENORUN: ULTIMATE</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    
+    * { box-sizing: border-box; touch-action: none; }
+    
     body { 
         margin: 0; background: #050510; overflow: hidden; 
         font-family: 'Press Start 2P', cursive; color: #fff; 
         display: flex; justify-content: center; align-items: center; 
         height: 100vh; user-select: none; 
     }
+
     #gameWrapper { 
-        position: relative; width: 800px; height: 450px; 
-        background: #000; border: 4px solid #333; 
+        position: relative; 
+        width: 100%; max-width: 800px; 
+        aspect-ratio: 16/9;
+        background: #000; 
+        border: 4px solid #333; 
         box-shadow: 0 0 50px rgba(0, 255, 136, 0.2); 
         image-rendering: pixelated; 
     }
+
     canvas { width: 100%; height: 100%; display: block; }
     
+    /* UI Overlay */
     .overlay { 
         position: absolute; top:0; left:0; width:100%; height:100%; 
         background: rgba(0,0,0,0.85); 
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        z-index: 10; transition: opacity 0.2s; 
+        z-index: 20; transition: opacity 0.2s; 
     }
     .hidden { opacity: 0; pointer-events: none; }
     
-    h1 { font-size: 40px; color: #3b8; text-shadow: 4px 4px #000; margin-bottom: 20px; text-align: center; }
+    h1 { 
+        font-size: clamp(20px, 5vw, 40px); color: #3b8; text-shadow: 4px 4px #000; 
+        margin-bottom: 20px; line-height: 1.5; text-align: center; 
+    }
     
     .hud { 
         position: absolute; top: 10px; left: 10px; right: 10px; 
         display: flex; justify-content: space-between; 
-        font-size: 16px; color: #fff; text-shadow: 2px 2px #000; 
+        font-size: clamp(10px, 3vw, 16px); color: #fff; text-shadow: 2px 2px #000; 
         z-index: 5; pointer-events: none; 
     }
+
+    /* Mobile Controls */
+    #mobileControls {
+        position: absolute; bottom: 20px; right: 20px;
+        z-index: 15; display: none; /* Shown via JS detection */
+    }
+    .fire-btn {
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: rgba(255, 50, 50, 0.5);
+        border: 4px solid #f55;
+        color: white; font-size: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-family: inherit;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .fire-btn:active { background: #f00; transform: scale(0.95); }
     
     input { 
         background: #000; border: 2px solid #3b8; color: #3b8; 
         padding: 10px; font-family: inherit; font-size: 16px; 
-        width: 250px; text-align: center; margin-top: 10px; text-transform: uppercase; 
+        width: 250px; text-align: center; margin-top: 10px; 
+        text-transform: uppercase; 
     }
-    button { 
+    
+    button.menu-btn { 
         background: #3b8; color: #000; border: none; 
         padding: 15px 20px; font-family: inherit; font-size: 14px; 
         margin-top: 15px; cursor: pointer; border: 2px solid #fff; 
+        box-shadow: 0 4px 0 #000;
     }
-    button:hover { background: #fff; transform: translateY(-2px); }
-    
+    button.menu-btn:hover { transform: translateY(-2px); }
+    button.menu-btn:active { transform: translateY(2px); box-shadow: 0 0 0; }
+
     #lbContainer {
         margin-top: 20px; font-size: 10px; color: #888; text-align: left;
-        border: 1px solid #333; padding: 10px; background: #111; min-width: 200px;
+        border: 1px solid #333; padding: 10px; background: #111; min-width: 250px;
     }
-    .lb-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .lb-row { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #222; padding-bottom: 2px;}
     .lb-row span:last-child { color: #3b8; }
+    
+    .scanlines {
+        position: absolute; top:0; left:0; width:100%; height:100%;
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+        background-size: 100% 4px; pointer-events: none; z-index: 10;
+    }
 </style>
 </head>
 <body>
@@ -62,29 +101,34 @@
 <div id="gameWrapper">
     <div class="hud">
         <span>SCORE: <span id="scoreVal">00000</span></span>
-        <span>HI-SCORE: <span id="hiVal">00000</span></span>
+        <span>LEVEL: <span id="lvlVal">1</span></span>
     </div>
 
     <div id="startScreen" class="overlay">
-        <h1>XENORUN<br><span style="font-size:20px; color:#fff;">NES EDITION</span></h1>
+        <h1>XENORUN<br><span style="font-size:0.6em; color:#fff;">ULTIMATE</span></h1>
         <div style="text-align:center; font-size:10px; color:#aaa; line-height:2;">
             CONTROLS:<br>
-            [SPACE] / [CLICK] TO JUMP<br>
-            [X] PLASMA RIFLE
+            [SPACE] or [TAP L] = JUMP<br>
+            [X] or [TAP R] = FIRE PLASMA
         </div>
-        <div style="margin-top:20px; color:#fa0; animation:b 1s infinite;">PRESS SPACE TO START</div>
-        <div id="lbContainer">LOADING LEADERBOARD...</div>
+        <button class="menu-btn" onclick="startGame()">INITIATE MISSION</button>
+        <div id="lbContainer">LOADING DATABASE...</div>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
-        <h1 style="color:#e44;">GAME OVER</h1>
+        <h1 style="color:#e44;">M.I.A.</h1>
         <p>SCORE: <span id="finalScore">0</span></p>
         <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="15">
-        <button onclick="submitScore()" id="subBtn">SUBMIT SCORE</button>
-        <button onclick="resetGame()" style="background:#000; color:#fff;">TRY AGAIN</button>
+        <button class="menu-btn" onclick="submitScore()" id="subBtn">UPLOAD DATA</button>
+        <button class="menu-btn" onclick="resetGame()" style="background:#000; color:#fff;">RETRY</button>
+    </div>
+
+    <div id="mobileControls">
+        <div class="fire-btn" id="mobFireBtn">FIRE</div>
     </div>
 
     <canvas id="c"></canvas>
+    <div class="scanlines"></div>
 </div>
 
 <script>
@@ -93,181 +137,271 @@ const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbyPAOLu61io_asr
 
 const C = document.getElementById('c');
 const ctx = C.getContext('2d');
-C.width = 800; C.height = 450;
+// Internal Resolution (NES Style)
+const GAME_W = 320; 
+const GAME_H = 180;
+// We render small, CSS scales it up
+C.width = GAME_W; C.height = GAME_H;
 
-/** 2. SPRITE GENERATOR */
-const PALETTE = { g: '#3b8', b: '#111', w: '#fff', s: '#fa0', r: '#e44', p: '#a4e' };
+/** 2. SPRITE ENGINE (16x16 High Detail) */
+const PAL = { 
+    g: '#3b8', gD:'#164', // Greens
+    w: '#fff', 
+    s: '#fb8', // Skin
+    v: '#0ff', // Visor
+    r: '#e44', rD:'#911', // Reds
+    p: '#a4e', pD:'#516', // Purples
+    b: '#111', // Dark
+    y: '#fd0'  // Yellow
+};
+
+// Character Map Decoder
+// 0=Empty, 1=GreenLight, 2=GreenDark, 3=Visor, 4=Skin, 5=Dark
+// A=PurpleLight, B=PurpleDark, C=RedLight, D=RedDark
 const MAPS = {
-    marine: [
-        "   11111    ", "  113331    ", "  113331    ", "  111111    ",
-        "   222222   ", "  2222222   ", " 1 222222   ", " 1 112211   ",
-        " 1 1 22 1   ", "   1    1   ", "   1    1   ", "  11    11  "
+    marineRun: [
+        "      11111     ", "     113331     ", "     113331     ", "     111111     ",
+        "      4444      ", "     222222     ", "    12222221    ", "   1 222222 1   ",
+        "   1 112211 1   ", "     1 22 1     ", "     1    1     ", "    11    11    ",
+        "   11      11   "
     ],
-    alien: [
-        "      444   ", "    44444   ", "   44444444 ", "  44454444  ",
-        " 4444444    ", " 444444     ", "  4444      ", "  4  4      ",
-        " 4    4     ", "44    44    "
+    alien: [ // Xenomorph
+        "         BBBB   ", "       BBBAAB   ", "      BBBAAAB   ", "     BBBBBAAB   ",
+        "    BBBBBBBB    ", "   BBBBBBBBB    ", "  B BBBBBB      ", " B  B    B      ",
+        " B  B    B      ", "BB BB   BB      "
     ],
-    drone: [
-        "    4444    ", "   445544   ", "  44444444  ", " 4444444444 ",
-        " 4 4    4 4 ", " 4 4    4 4 "
+    drone: [ // Flying
+        "      DDDD      ", "    DDCccCDD    ", "   DccyyyyccD   ", "  DccccccccD    ",
+        "  DccccccccD    ", "   DDDDDDDD     ", "    D    D      "
+    ],
+    sentinel: [ // Walking Tank
+        "      AAAA      ", "     ABBBBA     ", "    ABBAABBA    ", "    ABBAABBA    ",
+        "    BBBBBBBB    ", "    B B  B B    ", "   BB BB BB BB  ", "  BB  BB BB  BB "
     ]
 };
 
-function makeSprite(map, scale) {
-    const w = map[0].length, h = map.length;
+function makeSprite(mapStr, scale=1) {
+    const w = 16; const h = 13; // Max height in array
     const cvs = document.createElement('canvas');
-    cvs.width = w * scale; cvs.height = h * scale;
+    cvs.width = w; cvs.height = h;
     const cx = cvs.getContext('2d');
-    map.forEach((row, y) => {
+    
+    mapStr.forEach((row, y) => {
         for(let x=0; x<row.length; x++) {
             let c = row[x];
-            let color = c==='1'?PALETTE.g : c==='2'?PALETTE.w : c==='3'?PALETTE.s : c==='4'?PALETTE.p : c==='5'?PALETTE.r : null;
-            if(color) { cx.fillStyle = color; cx.fillRect(x*scale, y*scale, scale, scale); }
+            let col = null;
+            if(c==='1') col=PAL.g; if(c==='2') col=PAL.gD; if(c==='3') col=PAL.v;
+            if(c==='4') col=PAL.s; if(c==='A') col=PAL.p; if(c==='B') col=PAL.pD;
+            if(c==='C') col=PAL.r; if(c==='D') col=PAL.rD; if(c==='c') col=PAL.r;
+            if(c==='y') col=PAL.y;
+            
+            if(col) { cx.fillStyle = col; cx.fillRect(x, y, 1, 1); }
         }
     });
     return cvs;
 }
-const IMG = { marine: makeSprite(MAPS.marine, 4), alien: makeSprite(MAPS.alien, 4), drone: makeSprite(MAPS.drone, 4) };
 
-/** 3. AUDIO SYSTEM */
+const IMG = {
+    marine: makeSprite(MAPS.marineRun),
+    alien: makeSprite(MAPS.alien),
+    drone: makeSprite(MAPS.drone),
+    sentinel: makeSprite(MAPS.sentinel)
+};
+
+/** 3. AUDIO ENGINE (Music Sequencer) */
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const actx = new AudioContext();
-const SFX = {
-    play: (freq, type, dur, vol=0.1) => {
-        if(actx.state === 'suspended') actx.resume();
-        const osc = actx.createOscillator(); const gain = actx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, actx.currentTime);
-        gain.gain.setValueAtTime(vol, actx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + dur);
-        osc.connect(gain); gain.connect(actx.destination);
-        osc.start(); osc.stop(actx.currentTime + dur);
-    },
-    jump: () => {
-        const o = actx.createOscillator(); const g = actx.createGain();
-        o.type = 'square'; o.frequency.setValueAtTime(150, actx.currentTime);
-        o.frequency.linearRampToValueAtTime(300, actx.currentTime + 0.15);
-        g.gain.setValueAtTime(0.1, actx.currentTime); g.gain.linearRampToValueAtTime(0, actx.currentTime + 0.15);
-        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.15);
-    },
-    shoot: () => SFX.play(600, 'sawtooth', 0.1, 0.05),
-    explode: () => {
-        const buf = actx.createBuffer(1, actx.sampleRate * 0.2, actx.sampleRate);
-        const data = buf.getChannelData(0);
-        for(let i=0; i<data.length; i++) data[i] = Math.random()*2 - 1;
-        const src = actx.createBufferSource(); src.buffer = buf;
-        const g = actx.createGain(); g.gain.value = 0.2; g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.2);
-        src.connect(g); g.connect(actx.destination); src.start();
+
+const MUSIC = {
+    bass: [110, 0, 110, 0, 130, 0, 98, 98, 110, 0, 110, 110, 87, 0, 87, 82],
+    lead: [0, 0, 440, 0, 0, 523, 0, 0, 0, 440, 392, 0, 0, 329, 0, 0],
+    step: 0,
+    tick: function() {
+        if(frames % (Math.floor(12 - difficulty*0.5)) === 0) { // Tempo increases with difficulty
+            this.step = (this.step + 1) % 16;
+            if(this.bass[this.step]) SFX.tone(this.bass[this.step], 'triangle', 0.1, 0.3);
+            if(this.lead[this.step]) SFX.tone(this.lead[this.step], 'square', 0.1, 0.08);
+        }
     }
 };
 
-/** 4. GAME ENGINE */
+const SFX = {
+    tone: (f, t, d, v) => {
+        if(actx.state==='suspended') actx.resume();
+        const o=actx.createOscillator(); const g=actx.createGain();
+        o.type=t; o.frequency.value=f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+d);
+        o.connect(g); g.connect(actx.destination);
+        o.start(); o.stop(actx.currentTime+d);
+    },
+    jump: () => {
+        const o=actx.createOscillator(); const g=actx.createGain();
+        o.frequency.setValueAtTime(100, actx.currentTime);
+        o.frequency.linearRampToValueAtTime(300, actx.currentTime+0.2);
+        g.gain.setValueAtTime(0.1, actx.currentTime);
+        g.gain.linearRampToValueAtTime(0, actx.currentTime+0.2);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+0.2);
+    },
+    shoot: () => {
+        const o=actx.createOscillator(); const g=actx.createGain();
+        o.type='sawtooth';
+        o.frequency.setValueAtTime(800, actx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(100, actx.currentTime+0.1);
+        g.gain.setValueAtTime(0.1, actx.currentTime);
+        g.gain.linearRampToValueAtTime(0, actx.currentTime+0.1);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+0.1);
+    },
+    explode: () => {
+        const b=actx.createBuffer(1, actx.sampleRate*0.2, actx.sampleRate);
+        const d=b.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+        const s=actx.createBufferSource(); s.buffer=b;
+        const g=actx.createGain(); g.gain.value=0.2; g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+0.2);
+        s.connect(g); g.connect(actx.destination); s.start();
+    },
+    hit: () => SFX.tone(100, 'sawtooth', 0.3, 0.2)
+};
+
+/** 4. GAME VARIABLES */
 let state = 'MENU';
-let frames = 0, score = 0, speed = 6;
-let player = { x: 100, y: 350, dy: 0, grounded: true, w:40, h:48 };
+let frames = 0, score = 0, difficulty = 1;
+let bgX = 0;
+let player = { x: 30, y: 120, dy: 0, grounded: true, w:12, h:14 }; // Adjusted hitbox
 let entities = [], bullets = [], particles = [], stars = [];
 
-for(let i=0; i<50; i++) stars.push({x:Math.random()*800, y:Math.random()*450, s:Math.random()*2});
+// Stars Init
+for(let i=0; i<40; i++) stars.push({x:Math.random()*GAME_W, y:Math.random()*120, s:Math.random()>0.8?2:1});
 
 function startGame() {
     state = 'PLAYING';
-    score = 0; speed = 6; frames = 0;
+    score = 0; frames = 0; difficulty = 1;
     entities = []; bullets = []; particles = [];
-    player.y = 350; player.dy = 0; player.grounded = true;
+    player.y = 120; player.dy = 0; player.grounded = true;
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('gameOverScreen').classList.add('hidden');
+    if(isMobile()) document.getElementById('mobileControls').style.display = 'block';
     actx.resume();
     loop();
 }
 
 function loop() {
     if(state !== 'PLAYING') return;
-    frames++; score++;
-    speed = 6 + (score * 0.001); if(speed > 15) speed = 15;
+
+    // --- LOGIC ---
+    frames++;
+    MUSIC.tick();
+
+    // Scaling Difficulty
+    score++;
+    if(score % 500 === 0) { difficulty++; SFX.tone(600,'square',0.5,0.1); } // Level Up Sound
     document.getElementById('scoreVal').innerText = score.toString().padStart(5,'0');
+    document.getElementById('lvlVal').innerText = difficulty;
+    
+    let moveSpeed = 1.5 + (difficulty * 0.2);
+    if(moveSpeed > 5) moveSpeed = 5;
 
-    // Music
-    if(frames % 15 === 0) {
-        let notes = [110, 110, 130, 98];
-        SFX.play(notes[(frames/15)%4], 'triangle', 0.1, 0.1);
-    }
-
-    // Physics
-    player.dy += 0.8; // Gravity
+    // Player Physics
+    player.dy += 0.25; // Gravity
     player.y += player.dy;
     
-    // Floor Collision
-    if(player.y + player.h >= 400) {
-        player.y = 400 - player.h;
+    // Floor
+    const floorY = GAME_H - 20;
+    if(player.y + player.h >= floorY) {
+        player.y = floorY - player.h;
         player.dy = 0;
         player.grounded = true;
     } else {
         player.grounded = false;
     }
 
-    // Spawn
-    if(frames % Math.floor(100 - speed*2) === 0) {
-        let type = Math.random() > 0.6 ? 'drone' : 'alien';
-        entities.push({ type: type, x: 800, y: type === 'drone' ? 280 : 360, w: 40, h: 40, dead: false });
+    // Spawning (More variety)
+    let spawnRate = Math.max(40, 100 - (difficulty * 5));
+    if(frames % spawnRate === 0) {
+        let r = Math.random();
+        let type = 'alien';
+        let y = floorY - 13;
+        let hp = 1;
+        
+        if(difficulty > 1 && r > 0.7) { type = 'drone'; y = floorY - 40 - Math.random()*30; }
+        if(difficulty > 3 && r > 0.9) { type = 'sentinel'; hp = 2; } // Tanky enemy
+        
+        entities.push({ type:type, x:GAME_W, y:y, w:14, h:13, dead:false, hp:hp, bob:0 });
     }
 
-    // Draw
-    ctx.fillStyle = '#050510'; ctx.fillRect(0,0,800,450);
-    
-    // Stars
-    ctx.fillStyle = '#fff';
+    // --- DRAW ---
+    ctx.fillStyle = '#050510'; 
+    ctx.fillRect(0,0,GAME_W,GAME_H); // Clear
+
+    // Background Stars (Parallax)
+    ctx.fillStyle = (difficulty > 4) ? '#202' : '#fff'; // Sky turns purple at lvl 5
     stars.forEach(s => {
-        s.x -= speed * 0.5; if(s.x < 0) s.x = 800;
+        s.x -= moveSpeed * (s.s===2 ? 0.5 : 0.2);
+        if(s.x < 0) s.x = GAME_W;
         ctx.fillRect(s.x, s.y, s.s, s.s);
     });
 
     // Floor
-    ctx.fillStyle = '#333'; ctx.fillRect(0, 400, 800, 50);
-    ctx.fillStyle = '#3b8'; ctx.fillRect(0, 400, 800, 4);
-
+    ctx.fillStyle = '#222'; ctx.fillRect(0, floorY, GAME_W, 20);
+    ctx.fillStyle = '#3b8'; ctx.fillRect(0, floorY, GAME_W, 1);
+    
     // Player
-    let spriteY = player.y;
-    if(player.grounded && Math.floor(frames/5)%2===0) spriteY += 2;
-    ctx.drawImage(IMG.marine, player.x, spriteY);
+    let bob = (player.grounded && Math.floor(frames/6)%2===0) ? 1 : 0;
+    ctx.drawImage(IMG.marine, player.x, player.y + bob);
 
     // Entities
     entities.forEach(e => {
-        e.x -= speed * (e.type==='drone' ? 1.3 : 1);
+        e.x -= moveSpeed * (e.type==='drone'?1.3:1);
+        if(e.type==='drone') e.y += Math.sin(frames*0.1)*0.5; // Drone bobbing
+        
         ctx.drawImage(IMG[e.type], e.x, e.y);
-        // Collision
-        let pad = 10;
-        if(!e.dead && player.x+pad < e.x+e.w-pad && player.x+player.w-pad > e.x+pad && player.y+pad < e.y+e.h-pad && player.y+player.h-pad > e.y+pad) {
-            gameOver();
-        }
+        
+        // Player Collision
+        if(!e.dead && rectCol(player, e)) gameOver();
     });
 
     // Bullets
     bullets.forEach(b => {
-        b.x += 12; ctx.fillStyle = '#fff'; ctx.fillRect(b.x, b.y, 12, 4);
+        b.x += 4;
+        ctx.fillStyle = '#ff0'; ctx.fillRect(b.x, b.y, 4, 1);
+        
         entities.forEach(e => {
-            if(!e.dead && b.x < e.x+e.w && b.x+12 > e.x && b.y < e.y+e.h && b.y+4 > e.y) {
-                e.dead = true; b.dead = true; score += 100;
-                SFX.explode(); spawnParticles(e.x+20, e.y+20, '#a4e');
+            if(!e.dead && !b.dead && rectCol(b, e)) {
+                b.dead = true;
+                e.hp--;
+                SFX.hit();
+                if(e.hp <= 0) {
+                    e.dead = true;
+                    score += (e.type==='sentinel'?300:100);
+                    SFX.explode();
+                    spawnParticles(e.x+7, e.y+7, PAL.p);
+                } else {
+                    spawnParticles(e.x+7, e.y+7, PAL.w); // Armor hit
+                }
             }
         });
     });
 
     // Cleanup
-    entities = entities.filter(e => e.x > -50 && !e.dead);
-    bullets = bullets.filter(b => b.x < 800 && !b.dead);
-
+    entities = entities.filter(e => e.x > -20 && !e.dead);
+    bullets = bullets.filter(b => b.x < GAME_W && !b.dead);
+    
     // Particles
     particles.forEach(p => {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.1;
-        ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 4, 4);
+        p.x += p.vx; p.y += p.vy; p.life--;
+        ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 1, 1);
     });
     particles = particles.filter(p => p.life > 0);
 
     requestAnimationFrame(loop);
 }
 
+function rectCol(r1, r2) {
+    return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x &&
+            r1.y < r2.y + r2.h && r1.y + r1.h > r2.y);
+}
+
 function spawnParticles(x, y, c) {
-    for(let i=0; i<8; i++) particles.push({x:x, y:y, vx:(Math.random()-.5)*10, vy:(Math.random()-.5)*10, life:1, c:c});
+    for(let i=0; i<6; i++) particles.push({x:x, y:y, vx:(Math.random()-.5)*2, vy:(Math.random()-.5)*2, life:20, c:c});
 }
 
 function gameOver() {
@@ -275,37 +409,45 @@ function gameOver() {
     SFX.explode();
     document.getElementById('finalScore').innerText = score;
     document.getElementById('gameOverScreen').classList.remove('hidden');
+    document.getElementById('mobileControls').style.display = 'none';
 }
 
 function resetGame() { startGame(); }
+function isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
-/** 5. CONTROLS */
-function handleJump() {
+/** 5. INPUTS */
+function jump() {
     if(state === 'MENU' || state === 'GAMEOVER') startGame();
     else if(state === 'PLAYING' && player.grounded) {
-        player.dy = -15; // JUMP FORCE
+        player.dy = -4.5; // Jump power
         player.grounded = false;
         SFX.jump();
     }
 }
-
-window.addEventListener('keydown', e => {
-    if(e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-        e.preventDefault(); // Stop scroll
-        handleJump();
-    }
-    if(e.code === 'KeyX' && state === 'PLAYING') {
-        bullets.push({x: player.x+40, y: player.y+24, dead:false});
+function shoot() {
+    if(state === 'PLAYING') {
+        bullets.push({x:player.x+10, y:player.y+6, w:4, h:1, dead:false});
         SFX.shoot();
     }
+}
+
+// Keyboard
+window.addEventListener('keydown', e => {
+    if(e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
+    if(e.code === 'KeyX') { e.preventDefault(); shoot(); }
 });
 
-// Mouse/Touch Support
-window.addEventListener('mousedown', (e) => {
-    if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') handleJump();
-});
-window.addEventListener('touchstart', (e) => {
-    if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') handleJump();
+// Touch / Mouse
+document.getElementById('gameWrapper').addEventListener('touchstart', (e) => {
+    if(e.target.id === 'mobFireBtn') {
+        e.preventDefault(); shoot();
+    } else if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+        e.preventDefault(); jump();
+    }
+}, {passive: false});
+
+document.getElementById('mobFireBtn').addEventListener('mousedown', (e) => {
+    e.preventDefault(); shoot(); // Desktop testing for fire button
 });
 
 /** 6. LEADERBOARD */
@@ -316,22 +458,22 @@ async function loadLB() {
         const top5 = data.sort((a,b) => b[1] - a[1]).slice(0, 5);
         let html = "";
         top5.forEach((row, i) => html += `<div class="lb-row"><span>#${i+1} ${row[0]}</span><span>${row[1]}</span></div>`);
-        document.getElementById('lbContainer').innerHTML = "TOP PLAYERS:<br>" + html;
-        if(top5.length > 0) document.getElementById('hiVal').innerText = top5[0][1];
-    } catch(e) { document.getElementById('lbContainer').innerHTML = "LEADERBOARD OFFLINE"; }
+        document.getElementById('lbContainer').innerHTML = "TOP AGENTS:<br>" + html;
+    } catch(e) { document.getElementById('lbContainer').innerHTML = "OFFLINE MODE"; }
 }
 
 async function submitScore() {
     const name = document.getElementById('playerName').value;
-    if(!name) return alert("PLEASE ENTER NAME");
-    const btn = document.getElementById('subBtn'); btn.innerText = "SENDING...";
+    if(!name) return alert("ENTER NAME");
+    document.getElementById('subBtn').innerText = "...";
     try {
         await fetch(LEADERBOARD_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ name: name, score: score }) });
-        alert("SCORE UPLOADED!"); location.reload();
-    } catch(e) { alert("UPLOAD FAILED"); btn.innerText = "TRY AGAIN"; }
+        alert("UPLOADED!"); location.reload();
+    } catch(e) { alert("ERROR"); }
 }
 
 loadLB();
+
 </script>
 </body>
 </html>
