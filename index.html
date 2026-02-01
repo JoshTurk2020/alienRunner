@@ -3,299 +3,382 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XENORUN: OMEGA</title>
+<title>XENORUN: NES EDITION</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-    body { margin: 0; background: #050510; overflow: hidden; font-family: 'Press Start 2P', cursive; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; user-select: none; }
-    #gameWrapper { position: relative; width: 960px; height: 540px; box-shadow: 0 0 60px rgba(0, 255, 136, 0.1); background: #000; border: 4px solid #222; border-radius: 4px; }
-    canvas { display: block; image-rendering: pixelated; width: 100%; height: 100%; }
-    .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; transition: opacity 0.3s; }
+    body { 
+        margin: 0; 
+        background: #050510; 
+        overflow: hidden; 
+        font-family: 'Press Start 2P', cursive; 
+        color: #fff; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        height: 100vh; 
+        user-select: none; 
+    }
+    #gameWrapper { 
+        position: relative; 
+        width: 800px; 
+        height: 450px; 
+        background: #000; 
+        border: 4px solid #333; 
+        box-shadow: 0 0 50px rgba(0, 255, 136, 0.2); 
+        image-rendering: pixelated; 
+    }
+    canvas { width: 100%; height: 100%; display: block; }
+    
+    /* UI Overlay */
+    .overlay { 
+        position: absolute; top:0; left:0; width:100%; height:100%; 
+        background: rgba(0,0,0,0.85); 
+        display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        z-index: 10; transition: opacity 0.2s; 
+    }
     .hidden { opacity: 0; pointer-events: none; }
-    h1 { font-size: 48px; color: #00ff88; text-shadow: 4px 4px #ff0055; margin-bottom: 20px; }
-    #scoreHud { position: absolute; top: 20px; right: 20px; font-size: 16px; color: #00ff88; text-shadow: 2px 2px #000; z-index: 5; }
     
-    /* Inputs */
-    input { background: #222; border: 2px solid #00ff88; color: #fff; padding: 15px; font-family: inherit; margin-top: 10px; text-transform: uppercase; text-align: center; font-size: 16px; width: 300px; }
-    button { background: #00ff88; color: #000; border: none; padding: 15px 30px; font-family: inherit; margin-top: 15px; cursor: pointer; font-size: 16px; transition: transform 0.1s; }
-    button:hover { background: #fff; transform: scale(1.05); }
+    h1 { 
+        font-size: 40px; color: #3b8; text-shadow: 4px 4px #000; 
+        margin-bottom: 20px; line-height: 1.2; text-align: center; 
+    }
     
-    .leaderboard-box { margin-top: 30px; font-size: 10px; color: #aaa; text-align: left; width: 400px; }
-    .lb-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #333; }
-    .lb-row:nth-child(1) { color: #ff0055; }
+    .hud { 
+        position: absolute; top: 10px; left: 10px; right: 10px; 
+        display: flex; justify-content: space-between; 
+        font-size: 16px; color: #fff; text-shadow: 2px 2px #000; 
+        z-index: 5; pointer-events: none; 
+    }
+    
+    input { 
+        background: #000; border: 2px solid #3b8; color: #3b8; 
+        padding: 10px; font-family: inherit; font-size: 16px; 
+        width: 250px; text-align: center; margin-top: 10px; 
+        text-transform: uppercase; 
+    }
+    button { 
+        background: #3b8; color: #000; border: none; 
+        padding: 15px 20px; font-family: inherit; font-size: 14px; 
+        margin-top: 15px; cursor: pointer; border: 2px solid #fff; 
+    }
+    button:hover { background: #fff; transform: translateY(-2px); }
+    
+    .blink { animation: b 1s infinite; color: #fa0; font-size: 12px; margin-top: 20px; }
+    @keyframes b { 50% { opacity: 0; } }
+
+    /* Leaderboard in Menu */
+    #lbContainer {
+        margin-top: 20px;
+        font-size: 10px;
+        color: #888;
+        text-align: left;
+        border: 1px solid #333;
+        padding: 10px;
+        background: #111;
+        min-width: 200px;
+    }
+    .lb-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .lb-row span:last-child { color: #3b8; }
 </style>
 </head>
 <body>
 
 <div id="gameWrapper">
-    <div id="scoreHud">SCORE: <span id="scoreVal">0</span></div>
-    
+    <div class="hud">
+        <span>SCORE: <span id="scoreVal">00000</span></span>
+        <span>HI-SCORE: <span id="hiVal">00000</span></span>
+    </div>
+
     <div id="startScreen" class="overlay">
-        <h1>XENORUN</h1>
-        <div style="color:#aaa; font-size:12px; margin-bottom:20px; line-height:1.6; text-align:center;">
-            MISSION: SURVIVE THE HIVE<br>
-            [SPACE] JUMP / JETPACK &nbsp; | &nbsp; [X] BLASTER
+        <h1>XENORUN<br><span style="font-size:20px; color:#fff;">NES EDITION</span></h1>
+        <div style="text-align:center; font-size:10px; color:#aaa; line-height:2;">
+            CONTROLS:<br>
+            [SPACE] JUMP / JETPACK<br>
+            [X] PLASMA RIFLE
         </div>
-        <button onclick="startGame()">DEPLOY MARINE</button>
-        <div class="leaderboard-box" id="startLeaderboard">CONNECTING TO NET...</div>
+        <div class="blink">PRESS SPACE TO START</div>
+        <div id="lbContainer">LOADING LEADERBOARD...</div>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
-        <h1 style="color:#ff0055;">K.I.A.</h1>
-        <p>FINAL SCORE: <span id="finalScore">0</span></p>
-        <input type="text" id="playerName" placeholder="ENTER FULL NAME" maxlength="15">
-        <button id="submitBtn" onclick="submitScore()">UPLOAD RECORD</button>
-        <button onclick="resetGame()" style="background:transparent; color:#fff; border:1px solid #555; margin-top:10px; font-size:12px;">RETRY MISSION</button>
+        <h1 style="color:#e44;">GAME OVER</h1>
+        <p>SCORE: <span id="finalScore">0</span></p>
+        <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="15">
+        <button onclick="submitScore()" id="subBtn">SUBMIT SCORE</button>
+        <button onclick="resetGame()" style="background:#000; color:#fff;">TRY AGAIN</button>
     </div>
 
     <canvas id="c"></canvas>
 </div>
 
 <script>
-/**
- * ------------------------------------------------------------------
+/** * ==========================================================================================
  * 1. CONFIGURATION
- * ------------------------------------------------------------------
+ * ==========================================================================================
  */
-// *** PASTE YOUR GOOGLE WEB APP URL BELOW ***
+// YOUR URL IS NOW LINKED:
 const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbyPAOLu61io_asry-ThXGVjqYbmCTN7DtvSvvAyl25J1DROrta614m_uXGTDMFqwomv/exec"; 
 
 const C = document.getElementById('c');
 const ctx = C.getContext('2d');
-C.width = 960; C.height = 540;
+C.width = 800; C.height = 450;
 
+/** * ==========================================================================================
+ * 2. SPRITE GENERATOR (The NES Art Engine)
+ * ==========================================================================================
+ * This draws the sprites pixel-by-pixel into memory so you get real graphics, not blocks.
+ */
 const PALETTE = {
-    green: '#00ff88', dark: '#1a1a2e', skin: '#ffccaa',
-    armor: '#444455', visor: '#ccffff',
-    alien: '#a0f', alienEye: '#f05',
-    bullet: '#fff'
+    g: '#3b8', // Green Neon
+    b: '#111', // Black/Outline
+    w: '#fff', // White
+    s: '#fa0', // Skin/Visor
+    r: '#e44', // Red
+    p: '#a4e'  // Purple Alien
 };
 
-/**
- * ------------------------------------------------------------------
- * 2. PIXEL ART ENGINE
- * ------------------------------------------------------------------
- * We draw text maps into Canvases to create sprites
- */
-const SpriteMaps = {
-    // 12x12 Pixel Grid
-    marineRun1: [
-        "......4444..",
-        "......4334..",
-        "......4334..",
-        ".....444444.",
-        "....4411444.",
-        "...4441144..",
-        "..4444114...",
-        "..4.44444...",
-        "....4...4...",
-        "...4....4...",
-        "...4....4...",
-        "..44....44.."
-    ],
-    marineRun2: [
-        "......4444..",
-        "......4334..",
-        "......4334..",
-        ".....444444.",
-        "....4411444.",
-        "...4441144..",
-        "..4444114...",
-        "..4.44444...",
-        "....4...44..",
-        "...44...4...",
-        "...4........",
-        "..44........"
+// 1 = Green, 2 = White, 3 = Skin/Visor, 4 = Purple, 5 = Red
+const MAPS = {
+    marine: [
+        "   11111    ",
+        "  113331    ",
+        "  113331    ",
+        "  111111    ",
+        "   222222   ",
+        "  2222222   ",
+        " 1 222222   ",
+        " 1 112211   ",
+        " 1 1 22 1   ",
+        "   1    1   ",
+        "   1    1   ",
+        "  11    11  "
     ],
     alien: [
-        "......555...",
-        "....555555..",
-        "...55555555.",
-        "..556555555.",
-        ".55555555...",
-        ".555555.....",
-        "..5555......",
-        "..5.5.......",
-        ".5..5.......",
-        "55..55......"
+        "      444   ",
+        "    44444   ",
+        "   44444444 ",
+        "  44454444  ",
+        " 4444444    ",
+        " 444444     ",
+        "  4444      ",
+        "  4  4      ",
+        " 4    4     ",
+        "44    44    "
     ],
     drone: [
-        ".....555....",
-        "...556555...",
-        "..55555555..",
-        ".5555555555.",
-        "............",
-        ".4...4..4...",
-        ".4...4..4..."
+        "    4444    ",
+        "   445544   ",
+        "  44444444  ",
+        " 4444444444 ",
+        " 4 4    4 4 ",
+        " 4 4    4 4 "
     ]
 };
 
-function parseSprite(map, scale=4) {
-    const w = map[0].length * scale;
-    const h = map.length * scale;
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    const cx = canvas.getContext('2d');
+function makeSprite(map, scale) {
+    const w = map[0].length;
+    const h = map.length;
+    const cvs = document.createElement('canvas');
+    cvs.width = w * scale; cvs.height = h * scale;
+    const cx = cvs.getContext('2d');
     
-    const colorMap = {
-        '1': PALETTE.green, '3': PALETTE.visor, '4': PALETTE.armor,
-        '5': PALETTE.alien, '6': PALETTE.alienEye
-    };
-
     map.forEach((row, y) => {
-        row.split('').forEach((char, x) => {
-            if (colorMap[char]) {
-                cx.fillStyle = colorMap[char];
-                cx.fillRect(x * scale, y * scale, scale, scale);
+        for(let x=0; x<row.length; x++) {
+            let char = row[x];
+            let color = null;
+            if(char === '1') color = PALETTE.g;
+            if(char === '2') color = PALETTE.w;
+            if(char === '3') color = PALETTE.s;
+            if(char === '4') color = PALETTE.p;
+            if(char === '5') color = PALETTE.r;
+            
+            if(color) {
+                cx.fillStyle = color;
+                cx.fillRect(x*scale, y*scale, scale, scale);
             }
-        });
+        }
     });
-    return canvas;
+    return cvs;
 }
 
-const Sprites = {
-    run1: parseSprite(SpriteMaps.marineRun1, 4),
-    run2: parseSprite(SpriteMaps.marineRun2, 4),
-    alien: parseSprite(SpriteMaps.alien, 4),
-    drone: parseSprite(SpriteMaps.drone, 4)
+const IMG = {
+    marine: makeSprite(MAPS.marine, 4),
+    alien: makeSprite(MAPS.alien, 4),
+    drone: makeSprite(MAPS.drone, 4)
 };
 
-/**
- * ------------------------------------------------------------------
- * 3. AUDIO ENGINE (Music & SFX)
- * ------------------------------------------------------------------
+/** * ==========================================================================================
+ * 3. AUDIO SYSTEM (NES Chiptune)
+ * ==========================================================================================
  */
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const actx = new AudioContext();
 
-const Tunes = {
-    // A simple NES-style bassline loop
-    bass: [110, 110, 146, 130, 98, 98, 130, 123], 
-    lead: [0, 0, 440, 0, 0, 0, 523, 0] 
-};
-
-const Sfx = {
+const SFX = {
     play: (freq, type, dur, vol=0.1) => {
-        if(actx.state==='suspended') actx.resume();
-        const o = actx.createOscillator();
-        const g = actx.createGain();
-        o.type = type;
-        o.frequency.setValueAtTime(freq, actx.currentTime);
-        g.gain.setValueAtTime(vol, actx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + dur);
-        o.connect(g); g.connect(actx.destination);
-        o.start(); o.stop(actx.currentTime + dur);
+        if(actx.state === 'suspended') actx.resume();
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, actx.currentTime);
+        gain.gain.setValueAtTime(vol, actx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + dur);
+        osc.connect(gain); gain.connect(actx.destination);
+        osc.start(); osc.stop(actx.currentTime + dur);
     },
     jump: () => {
         const o = actx.createOscillator();
         const g = actx.createGain();
+        o.type = 'square';
         o.frequency.setValueAtTime(150, actx.currentTime);
-        o.frequency.linearRampToValueAtTime(400, actx.currentTime + 0.1);
+        o.frequency.linearRampToValueAtTime(300, actx.currentTime + 0.15);
         g.gain.setValueAtTime(0.1, actx.currentTime);
-        g.gain.linearRampToValueAtTime(0, actx.currentTime + 0.1);
+        g.gain.linearRampToValueAtTime(0, actx.currentTime + 0.15);
         o.connect(g); g.connect(actx.destination);
-        o.start(); o.stop(actx.currentTime + 0.1);
+        o.start(); o.stop(actx.currentTime + 0.15);
     },
-    tick: (beat) => {
-        // Music Sequencer
-        let bStep = Math.floor(beat / 12) % 8;
-        if (beat % 12 === 0) Sfx.play(Tunes.bass[bStep], 'triangle', 0.1, 0.1);
-        if (beat % 12 === 0 && Tunes.lead[bStep] > 0) Sfx.play(Tunes.lead[bStep], 'square', 0.1, 0.05);
+    shoot: () => SFX.play(600, 'sawtooth', 0.1, 0.05),
+    explode: () => {
+        // White noise burst
+        const buf = actx.createBuffer(1, actx.sampleRate * 0.2, actx.sampleRate);
+        const data = buf.getChannelData(0);
+        for(let i=0; i<data.length; i++) data[i] = Math.random()*2 - 1;
+        const src = actx.createBufferSource();
+        src.buffer = buf;
+        const g = actx.createGain();
+        g.gain.value = 0.2;
+        g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.2);
+        src.connect(g); g.connect(actx.destination);
+        src.start();
     }
 };
 
-/**
- * ------------------------------------------------------------------
- * 4. GAME LOGIC
- * ------------------------------------------------------------------
+/** * ==========================================================================================
+ * 4. GAME ENGINE
+ * ==========================================================================================
  */
 let state = 'MENU';
 let frames = 0, score = 0, speed = 6;
-let player = { x:100, y:0, dy:0, grounded:false, anim:0 };
-let enemies = [], bullets = [], particles = [];
+let player = { x: 100, y: 0, dy: 0, grounded: false, w:40, h:48 };
+let entities = [], bullets = [], particles = [];
+let stars = [];
+
+// Init Stars
+for(let i=0; i<50; i++) stars.push({x:Math.random()*800, y:Math.random()*450, s:Math.random()*2});
 
 function startGame() {
     state = 'PLAYING';
-    score = 0; speed = 7; frames = 0;
-    enemies = []; bullets = []; particles = [];
-    player.y = 400; player.dy = 0;
+    score = 0; speed = 6; frames = 0;
+    entities = []; bullets = []; particles = [];
+    player.y = 350; player.dy = 0;
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('gameOverScreen').classList.add('hidden');
     actx.resume();
-    loop();
+    requestAnimationFrame(loop);
 }
 
 function loop() {
-    if (state !== 'PLAYING') return;
+    if(state !== 'PLAYING') return;
     
-    // Clear
-    ctx.fillStyle = '#050510'; ctx.fillRect(0,0,960,540);
+    // 1. Update Logic
+    frames++;
+    score++;
+    speed = 6 + (score * 0.001); // Gradual speed up
+    if(speed > 15) speed = 15; // Cap speed
+
+    document.getElementById('scoreVal').innerText = score.toString().padStart(5,'0');
+
+    // Music Tick (Bassline)
+    if(frames % 15 === 0) {
+        let notes = [110, 110, 130, 98];
+        SFX.play(notes[(frames/15)%4], 'triangle', 0.1, 0.1);
+    }
+
+    // Player Physics
+    player.dy += 0.8; // Gravity
+    player.y += player.dy;
     
-    // Starfield
-    ctx.fillStyle = '#fff';
-    for(let i=0; i<20; i++) ctx.fillRect((frames*i*2)%960, (i*43)%540, 2, 2);
+    if(player.y + player.h > 400) {
+        player.y = 400 - player.h;
+        player.dy = 0;
+        player.grounded = true;
+    } else {
+        player.grounded = false;
+    }
 
-    // Ground
-    ctx.fillStyle = '#111'; ctx.fillRect(0, 500, 960, 40);
-    ctx.fillStyle = '#00ff88'; ctx.fillRect(0, 500, 960, 2);
-
-    // Music
-    Sfx.tick(frames);
-
-    // Logic
-    frames++; score++; speed += 0.001;
-    document.getElementById('scoreVal').innerText = score;
-
-    // Player
-    player.dy += 0.6; player.y += player.dy;
-    if(player.y > 452) { player.y = 452; player.dy = 0; player.grounded = true; }
-    else player.grounded = false;
-    
-    let pSprite = (!player.grounded) ? Sprites.run2 : (Math.floor(frames/6)%2==0 ? Sprites.run1 : Sprites.run2);
-    ctx.drawImage(pSprite, player.x, player.y);
-
-    // Spawner
-    if (frames % Math.floor(1000/speed) === 0) {
-        let isAir = Math.random() > 0.7;
-        enemies.push({
-            x: 960, y: isAir ? 350 : 455,
-            type: isAir ? 'drone' : 'alien',
+    // Spawn Enemies
+    if(frames % Math.floor(100 - speed*2) === 0) {
+        let type = Math.random() > 0.6 ? 'drone' : 'alien';
+        entities.push({
+            type: type,
+            x: 800,
+            y: type === 'drone' ? 280 : 360, // Drone flies, Alien walks
+            w: 40, h: 40,
             dead: false
         });
     }
 
-    // Enemies
-    enemies.forEach(e => {
-        e.x -= speed * (e.type==='drone'?1.2:1); // Drones vary speed
-        ctx.drawImage(Sprites[e.type], e.x, e.y);
-        
-        // Collision
-        if (!e.dead && 
-            player.x < e.x+40 && player.x+40 > e.x && 
-            player.y < e.y+40 && player.y+40 > e.y) {
-             endGame();
+    // 2. Draw
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0,0,800,450);
+
+    // Stars
+    ctx.fillStyle = '#fff';
+    stars.forEach(s => {
+        s.x -= speed * 0.5;
+        if(s.x < 0) s.x = 800;
+        ctx.fillRect(s.x, s.y, s.s, s.s);
+    });
+
+    // Floor
+    ctx.fillStyle = '#333';
+    ctx.fillRect(0, 400, 800, 50);
+    ctx.fillStyle = '#3b8';
+    ctx.fillRect(0, 400, 800, 4);
+
+    // Player Animation (Bobbing)
+    let spriteY = player.y;
+    if(player.grounded && Math.floor(frames/5)%2===0) spriteY += 2;
+    ctx.drawImage(IMG.marine, player.x, spriteY);
+
+    // Entities Logic
+    entities.forEach(e => {
+        e.x -= speed * (e.type==='drone' ? 1.3 : 1);
+        ctx.drawImage(IMG[e.type], e.x, e.y);
+
+        // Player Hit Check (Simple AABB)
+        let pad = 10;
+        if(!e.dead && 
+           player.x+pad < e.x+e.w-pad && 
+           player.x+player.w-pad > e.x+pad && 
+           player.y+pad < e.y+e.h-pad && 
+           player.y+player.h-pad > e.y+pad) {
+               gameOver();
         }
     });
 
-    // Bullets
+    // Bullets Logic
     bullets.forEach(b => {
-        b.x += 15;
-        ctx.fillStyle = '#fff'; ctx.fillRect(b.x, b.y, 10, 4);
-        
-        // Hit Detect
-        enemies.forEach(e => {
-            if (!e.dead && b.x < e.x+40 && b.x+10 > e.x && b.y < e.y+40 && b.y+4 > e.y) {
-                e.dead = true; b.dead = true;
+        b.x += 12;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(b.x, b.y, 12, 4);
+
+        // Bullet Hit Check
+        entities.forEach(e => {
+            if(!e.dead && b.x < e.x+e.w && b.x+12 > e.x && b.y < e.y+e.h && b.y+4 > e.y) {
+                e.dead = true;
+                b.dead = true;
                 score += 100;
-                Sfx.play(100, 'noise', 0.1);
-                spawnParticles(e.x, e.y, '#f05');
+                SFX.explode();
+                spawnParticles(e.x+20, e.y+20, '#a4e');
             }
         });
     });
-    
+
     // Cleanup
-    enemies = enemies.filter(e => e.x > -50 && !e.dead);
-    bullets = bullets.filter(b => b.x < 1000 && !b.dead);
-    
+    entities = entities.filter(e => e.x > -50 && !e.dead);
+    bullets = bullets.filter(b => b.x < 800 && !b.dead);
+
     // Particles
     particles.forEach(p => {
         p.x += p.vx; p.y += p.vy; p.life -= 0.1;
@@ -306,54 +389,88 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-function endGame() {
+function spawnParticles(x, y, c) {
+    for(let i=0; i<8; i++) {
+        particles.push({x:x, y:y, vx:(Math.random()-.5)*10, vy:(Math.random()-.5)*10, life:1, c:c});
+    }
+}
+
+function gameOver() {
     state = 'GAMEOVER';
-    Sfx.play(100, 'sawtooth', 0.5);
+    SFX.explode();
     document.getElementById('finalScore').innerText = score;
     document.getElementById('gameOverScreen').classList.remove('hidden');
 }
 
-function spawnParticles(x, y, c) {
-    for(let i=0; i<8; i++) particles.push({x, y, vx:(Math.random()-.5)*10, vy:(Math.random()-.5)*10, life:1, c});
+function resetGame() {
+    startGame();
 }
 
-// Controls
+/** * ==========================================================================================
+ * 5. CONTROLS
+ * ==========================================================================================
+ */
 window.addEventListener('keydown', e => {
-    if (e.code === 'Space' && state === 'PLAYING') {
-        if (player.grounded || player.dy > 0) { 
-            player.dy = -13; Sfx.jump();
+    if(e.code === 'Space') {
+        if(state === 'MENU' || state === 'GAMEOVER') startGame();
+        else if(state === 'PLAYING' && (player.grounded || player.y > 200)) {
+            player.dy = -15; // JUMP
+            SFX.jump();
         }
     }
-    if (e.code === 'KeyX' && state === 'PLAYING') {
-        bullets.push({x: player.x+40, y: player.y+20, dead:false});
-        Sfx.play(600, 'square', 0.05);
+    if(e.code === 'KeyX' && state === 'PLAYING') {
+        bullets.push({x: player.x+40, y: player.y+24, dead:false});
+        SFX.shoot();
     }
 });
 
-// Leaderboard
+/** * ==========================================================================================
+ * 6. LEADERBOARD CONNECTION
+ * ==========================================================================================
+ */
 async function loadLB() {
-    if(LEADERBOARD_URL.includes("PASTE")) return;
     try {
-        let r = await fetch(LEADERBOARD_URL);
-        let d = await r.json();
-        document.getElementById('startLeaderboard').innerHTML = d.map(r=>
-            `<div class="lb-row"><span>${r[0]}</span><span>${r[1]}</span></div>`
-        ).join('');
-    } catch(e){}
+        const res = await fetch(LEADERBOARD_URL);
+        const data = await res.json();
+        // Sort just in case script didn't, take top 5
+        const top5 = data.sort((a,b) => b[1] - a[1]).slice(0, 5);
+        
+        let html = "";
+        top5.forEach((row, i) => {
+            html += `<div class="lb-row"><span>#${i+1} ${row[0]}</span><span>${row[1]}</span></div>`;
+        });
+        document.getElementById('lbContainer').innerHTML = "TOP PLAYERS:<br>" + html;
+        document.getElementById('hiVal').innerText = top5[0][1];
+    } catch(e) {
+        console.log(e);
+        document.getElementById('lbContainer').innerHTML = "LEADERBOARD OFFLINE";
+    }
 }
-async function submitScore() {
-    let n = document.getElementById('playerName').value;
-    if(!n) return alert("ENTER NAME");
-    document.getElementById('submitBtn').innerText = "SENDING...";
-    await fetch(LEADERBOARD_URL, {
-        method:'POST', mode:'no-cors',
-        body: JSON.stringify({name:n, score:score})
-    });
-    location.reload();
-}
-function resetGame() { location.reload(); }
 
+async function submitScore() {
+    const name = document.getElementById('playerName').value;
+    if(!name) return alert("PLEASE ENTER NAME");
+    
+    const btn = document.getElementById('subBtn');
+    btn.innerText = "SENDING...";
+    
+    try {
+        await fetch(LEADERBOARD_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({ name: name, score: score })
+        });
+        alert("SCORE UPLOADED!");
+        location.reload();
+    } catch(e) {
+        alert("UPLOAD FAILED");
+        btn.innerText = "TRY AGAIN";
+    }
+}
+
+// Load ranks on boot
 loadLB();
+
 </script>
 </body>
 </html>
