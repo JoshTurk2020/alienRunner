@@ -3,33 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XENORUN: NES EDITION</title>
+<title>XENORUN: OMEGA</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     body { 
-        margin: 0; 
-        background: #050510; 
-        overflow: hidden; 
-        font-family: 'Press Start 2P', cursive; 
-        color: #fff; 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        height: 100vh; 
-        user-select: none; 
+        margin: 0; background: #050510; overflow: hidden; 
+        font-family: 'Press Start 2P', cursive; color: #fff; 
+        display: flex; justify-content: center; align-items: center; 
+        height: 100vh; user-select: none; 
     }
     #gameWrapper { 
-        position: relative; 
-        width: 800px; 
-        height: 450px; 
-        background: #000; 
-        border: 4px solid #333; 
+        position: relative; width: 800px; height: 450px; 
+        background: #000; border: 4px solid #333; 
         box-shadow: 0 0 50px rgba(0, 255, 136, 0.2); 
         image-rendering: pixelated; 
     }
     canvas { width: 100%; height: 100%; display: block; }
     
-    /* UI Overlay */
     .overlay { 
         position: absolute; top:0; left:0; width:100%; height:100%; 
         background: rgba(0,0,0,0.85); 
@@ -38,10 +28,7 @@
     }
     .hidden { opacity: 0; pointer-events: none; }
     
-    h1 { 
-        font-size: 40px; color: #3b8; text-shadow: 4px 4px #000; 
-        margin-bottom: 20px; line-height: 1.2; text-align: center; 
-    }
+    h1 { font-size: 40px; color: #3b8; text-shadow: 4px 4px #000; margin-bottom: 20px; text-align: center; }
     
     .hud { 
         position: absolute; top: 10px; left: 10px; right: 10px; 
@@ -53,8 +40,7 @@
     input { 
         background: #000; border: 2px solid #3b8; color: #3b8; 
         padding: 10px; font-family: inherit; font-size: 16px; 
-        width: 250px; text-align: center; margin-top: 10px; 
-        text-transform: uppercase; 
+        width: 250px; text-align: center; margin-top: 10px; text-transform: uppercase; 
     }
     button { 
         background: #3b8; color: #000; border: none; 
@@ -63,19 +49,9 @@
     }
     button:hover { background: #fff; transform: translateY(-2px); }
     
-    .blink { animation: b 1s infinite; color: #fa0; font-size: 12px; margin-top: 20px; }
-    @keyframes b { 50% { opacity: 0; } }
-
-    /* Leaderboard in Menu */
     #lbContainer {
-        margin-top: 20px;
-        font-size: 10px;
-        color: #888;
-        text-align: left;
-        border: 1px solid #333;
-        padding: 10px;
-        background: #111;
-        min-width: 200px;
+        margin-top: 20px; font-size: 10px; color: #888; text-align: left;
+        border: 1px solid #333; padding: 10px; background: #111; min-width: 200px;
     }
     .lb-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
     .lb-row span:last-child { color: #3b8; }
@@ -93,10 +69,10 @@
         <h1>XENORUN<br><span style="font-size:20px; color:#fff;">NES EDITION</span></h1>
         <div style="text-align:center; font-size:10px; color:#aaa; line-height:2;">
             CONTROLS:<br>
-            [SPACE] JUMP / JETPACK<br>
+            [SPACE] / [CLICK] TO JUMP<br>
             [X] PLASMA RIFLE
         </div>
-        <div class="blink">PRESS SPACE TO START</div>
+        <div style="margin-top:20px; color:#fa0; animation:b 1s infinite;">PRESS SPACE TO START</div>
         <div id="lbContainer">LOADING LEADERBOARD...</div>
     </div>
 
@@ -112,193 +88,116 @@
 </div>
 
 <script>
-/** * ==========================================================================================
- * 1. CONFIGURATION
- * ==========================================================================================
- */
-// YOUR URL IS NOW LINKED:
+/** 1. CONFIGURATION */
 const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbyPAOLu61io_asry-ThXGVjqYbmCTN7DtvSvvAyl25J1DROrta614m_uXGTDMFqwomv/exec"; 
 
 const C = document.getElementById('c');
 const ctx = C.getContext('2d');
 C.width = 800; C.height = 450;
 
-/** * ==========================================================================================
- * 2. SPRITE GENERATOR (The NES Art Engine)
- * ==========================================================================================
- * This draws the sprites pixel-by-pixel into memory so you get real graphics, not blocks.
- */
-const PALETTE = {
-    g: '#3b8', // Green Neon
-    b: '#111', // Black/Outline
-    w: '#fff', // White
-    s: '#fa0', // Skin/Visor
-    r: '#e44', // Red
-    p: '#a4e'  // Purple Alien
-};
-
-// 1 = Green, 2 = White, 3 = Skin/Visor, 4 = Purple, 5 = Red
+/** 2. SPRITE GENERATOR */
+const PALETTE = { g: '#3b8', b: '#111', w: '#fff', s: '#fa0', r: '#e44', p: '#a4e' };
 const MAPS = {
     marine: [
-        "   11111    ",
-        "  113331    ",
-        "  113331    ",
-        "  111111    ",
-        "   222222   ",
-        "  2222222   ",
-        " 1 222222   ",
-        " 1 112211   ",
-        " 1 1 22 1   ",
-        "   1    1   ",
-        "   1    1   ",
-        "  11    11  "
+        "   11111    ", "  113331    ", "  113331    ", "  111111    ",
+        "   222222   ", "  2222222   ", " 1 222222   ", " 1 112211   ",
+        " 1 1 22 1   ", "   1    1   ", "   1    1   ", "  11    11  "
     ],
     alien: [
-        "      444   ",
-        "    44444   ",
-        "   44444444 ",
-        "  44454444  ",
-        " 4444444    ",
-        " 444444     ",
-        "  4444      ",
-        "  4  4      ",
-        " 4    4     ",
-        "44    44    "
+        "      444   ", "    44444   ", "   44444444 ", "  44454444  ",
+        " 4444444    ", " 444444     ", "  4444      ", "  4  4      ",
+        " 4    4     ", "44    44    "
     ],
     drone: [
-        "    4444    ",
-        "   445544   ",
-        "  44444444  ",
-        " 4444444444 ",
-        " 4 4    4 4 ",
-        " 4 4    4 4 "
+        "    4444    ", "   445544   ", "  44444444  ", " 4444444444 ",
+        " 4 4    4 4 ", " 4 4    4 4 "
     ]
 };
 
 function makeSprite(map, scale) {
-    const w = map[0].length;
-    const h = map.length;
+    const w = map[0].length, h = map.length;
     const cvs = document.createElement('canvas');
     cvs.width = w * scale; cvs.height = h * scale;
     const cx = cvs.getContext('2d');
-    
     map.forEach((row, y) => {
         for(let x=0; x<row.length; x++) {
-            let char = row[x];
-            let color = null;
-            if(char === '1') color = PALETTE.g;
-            if(char === '2') color = PALETTE.w;
-            if(char === '3') color = PALETTE.s;
-            if(char === '4') color = PALETTE.p;
-            if(char === '5') color = PALETTE.r;
-            
-            if(color) {
-                cx.fillStyle = color;
-                cx.fillRect(x*scale, y*scale, scale, scale);
-            }
+            let c = row[x];
+            let color = c==='1'?PALETTE.g : c==='2'?PALETTE.w : c==='3'?PALETTE.s : c==='4'?PALETTE.p : c==='5'?PALETTE.r : null;
+            if(color) { cx.fillStyle = color; cx.fillRect(x*scale, y*scale, scale, scale); }
         }
     });
     return cvs;
 }
+const IMG = { marine: makeSprite(MAPS.marine, 4), alien: makeSprite(MAPS.alien, 4), drone: makeSprite(MAPS.drone, 4) };
 
-const IMG = {
-    marine: makeSprite(MAPS.marine, 4),
-    alien: makeSprite(MAPS.alien, 4),
-    drone: makeSprite(MAPS.drone, 4)
-};
-
-/** * ==========================================================================================
- * 3. AUDIO SYSTEM (NES Chiptune)
- * ==========================================================================================
- */
+/** 3. AUDIO SYSTEM */
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const actx = new AudioContext();
-
 const SFX = {
     play: (freq, type, dur, vol=0.1) => {
         if(actx.state === 'suspended') actx.resume();
-        const osc = actx.createOscillator();
-        const gain = actx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, actx.currentTime);
+        const osc = actx.createOscillator(); const gain = actx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, actx.currentTime);
         gain.gain.setValueAtTime(vol, actx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + dur);
         osc.connect(gain); gain.connect(actx.destination);
         osc.start(); osc.stop(actx.currentTime + dur);
     },
     jump: () => {
-        const o = actx.createOscillator();
-        const g = actx.createGain();
-        o.type = 'square';
-        o.frequency.setValueAtTime(150, actx.currentTime);
+        const o = actx.createOscillator(); const g = actx.createGain();
+        o.type = 'square'; o.frequency.setValueAtTime(150, actx.currentTime);
         o.frequency.linearRampToValueAtTime(300, actx.currentTime + 0.15);
-        g.gain.setValueAtTime(0.1, actx.currentTime);
-        g.gain.linearRampToValueAtTime(0, actx.currentTime + 0.15);
-        o.connect(g); g.connect(actx.destination);
-        o.start(); o.stop(actx.currentTime + 0.15);
+        g.gain.setValueAtTime(0.1, actx.currentTime); g.gain.linearRampToValueAtTime(0, actx.currentTime + 0.15);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.15);
     },
     shoot: () => SFX.play(600, 'sawtooth', 0.1, 0.05),
     explode: () => {
-        // White noise burst
         const buf = actx.createBuffer(1, actx.sampleRate * 0.2, actx.sampleRate);
         const data = buf.getChannelData(0);
         for(let i=0; i<data.length; i++) data[i] = Math.random()*2 - 1;
-        const src = actx.createBufferSource();
-        src.buffer = buf;
-        const g = actx.createGain();
-        g.gain.value = 0.2;
-        g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.2);
-        src.connect(g); g.connect(actx.destination);
-        src.start();
+        const src = actx.createBufferSource(); src.buffer = buf;
+        const g = actx.createGain(); g.gain.value = 0.2; g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.2);
+        src.connect(g); g.connect(actx.destination); src.start();
     }
 };
 
-/** * ==========================================================================================
- * 4. GAME ENGINE
- * ==========================================================================================
- */
+/** 4. GAME ENGINE */
 let state = 'MENU';
 let frames = 0, score = 0, speed = 6;
-let player = { x: 100, y: 0, dy: 0, grounded: false, w:40, h:48 };
-let entities = [], bullets = [], particles = [];
-let stars = [];
+let player = { x: 100, y: 350, dy: 0, grounded: true, w:40, h:48 };
+let entities = [], bullets = [], particles = [], stars = [];
 
-// Init Stars
 for(let i=0; i<50; i++) stars.push({x:Math.random()*800, y:Math.random()*450, s:Math.random()*2});
 
 function startGame() {
     state = 'PLAYING';
     score = 0; speed = 6; frames = 0;
     entities = []; bullets = []; particles = [];
-    player.y = 350; player.dy = 0;
+    player.y = 350; player.dy = 0; player.grounded = true;
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('gameOverScreen').classList.add('hidden');
     actx.resume();
-    requestAnimationFrame(loop);
+    loop();
 }
 
 function loop() {
     if(state !== 'PLAYING') return;
-    
-    // 1. Update Logic
-    frames++;
-    score++;
-    speed = 6 + (score * 0.001); // Gradual speed up
-    if(speed > 15) speed = 15; // Cap speed
-
+    frames++; score++;
+    speed = 6 + (score * 0.001); if(speed > 15) speed = 15;
     document.getElementById('scoreVal').innerText = score.toString().padStart(5,'0');
 
-    // Music Tick (Bassline)
+    // Music
     if(frames % 15 === 0) {
         let notes = [110, 110, 130, 98];
         SFX.play(notes[(frames/15)%4], 'triangle', 0.1, 0.1);
     }
 
-    // Player Physics
+    // Physics
     player.dy += 0.8; // Gravity
     player.y += player.dy;
     
-    if(player.y + player.h > 400) {
+    // Floor Collision
+    if(player.y + player.h >= 400) {
         player.y = 400 - player.h;
         player.dy = 0;
         player.grounded = true;
@@ -306,71 +205,49 @@ function loop() {
         player.grounded = false;
     }
 
-    // Spawn Enemies
+    // Spawn
     if(frames % Math.floor(100 - speed*2) === 0) {
         let type = Math.random() > 0.6 ? 'drone' : 'alien';
-        entities.push({
-            type: type,
-            x: 800,
-            y: type === 'drone' ? 280 : 360, // Drone flies, Alien walks
-            w: 40, h: 40,
-            dead: false
-        });
+        entities.push({ type: type, x: 800, y: type === 'drone' ? 280 : 360, w: 40, h: 40, dead: false });
     }
 
-    // 2. Draw
-    ctx.fillStyle = '#050510';
-    ctx.fillRect(0,0,800,450);
-
+    // Draw
+    ctx.fillStyle = '#050510'; ctx.fillRect(0,0,800,450);
+    
     // Stars
     ctx.fillStyle = '#fff';
     stars.forEach(s => {
-        s.x -= speed * 0.5;
-        if(s.x < 0) s.x = 800;
+        s.x -= speed * 0.5; if(s.x < 0) s.x = 800;
         ctx.fillRect(s.x, s.y, s.s, s.s);
     });
 
     // Floor
-    ctx.fillStyle = '#333';
-    ctx.fillRect(0, 400, 800, 50);
-    ctx.fillStyle = '#3b8';
-    ctx.fillRect(0, 400, 800, 4);
+    ctx.fillStyle = '#333'; ctx.fillRect(0, 400, 800, 50);
+    ctx.fillStyle = '#3b8'; ctx.fillRect(0, 400, 800, 4);
 
-    // Player Animation (Bobbing)
+    // Player
     let spriteY = player.y;
     if(player.grounded && Math.floor(frames/5)%2===0) spriteY += 2;
     ctx.drawImage(IMG.marine, player.x, spriteY);
 
-    // Entities Logic
+    // Entities
     entities.forEach(e => {
         e.x -= speed * (e.type==='drone' ? 1.3 : 1);
         ctx.drawImage(IMG[e.type], e.x, e.y);
-
-        // Player Hit Check (Simple AABB)
+        // Collision
         let pad = 10;
-        if(!e.dead && 
-           player.x+pad < e.x+e.w-pad && 
-           player.x+player.w-pad > e.x+pad && 
-           player.y+pad < e.y+e.h-pad && 
-           player.y+player.h-pad > e.y+pad) {
-               gameOver();
+        if(!e.dead && player.x+pad < e.x+e.w-pad && player.x+player.w-pad > e.x+pad && player.y+pad < e.y+e.h-pad && player.y+player.h-pad > e.y+pad) {
+            gameOver();
         }
     });
 
-    // Bullets Logic
+    // Bullets
     bullets.forEach(b => {
-        b.x += 12;
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(b.x, b.y, 12, 4);
-
-        // Bullet Hit Check
+        b.x += 12; ctx.fillStyle = '#fff'; ctx.fillRect(b.x, b.y, 12, 4);
         entities.forEach(e => {
             if(!e.dead && b.x < e.x+e.w && b.x+12 > e.x && b.y < e.y+e.h && b.y+4 > e.y) {
-                e.dead = true;
-                b.dead = true;
-                score += 100;
-                SFX.explode();
-                spawnParticles(e.x+20, e.y+20, '#a4e');
+                e.dead = true; b.dead = true; score += 100;
+                SFX.explode(); spawnParticles(e.x+20, e.y+20, '#a4e');
             }
         });
     });
@@ -390,9 +267,7 @@ function loop() {
 }
 
 function spawnParticles(x, y, c) {
-    for(let i=0; i<8; i++) {
-        particles.push({x:x, y:y, vx:(Math.random()-.5)*10, vy:(Math.random()-.5)*10, life:1, c:c});
-    }
+    for(let i=0; i<8; i++) particles.push({x:x, y:y, vx:(Math.random()-.5)*10, vy:(Math.random()-.5)*10, life:1, c:c});
 }
 
 function gameOver() {
@@ -402,21 +277,22 @@ function gameOver() {
     document.getElementById('gameOverScreen').classList.remove('hidden');
 }
 
-function resetGame() {
-    startGame();
+function resetGame() { startGame(); }
+
+/** 5. CONTROLS */
+function handleJump() {
+    if(state === 'MENU' || state === 'GAMEOVER') startGame();
+    else if(state === 'PLAYING' && player.grounded) {
+        player.dy = -15; // JUMP FORCE
+        player.grounded = false;
+        SFX.jump();
+    }
 }
 
-/** * ==========================================================================================
- * 5. CONTROLS
- * ==========================================================================================
- */
 window.addEventListener('keydown', e => {
-    if(e.code === 'Space') {
-        if(state === 'MENU' || state === 'GAMEOVER') startGame();
-        else if(state === 'PLAYING' && (player.grounded || player.y > 200)) {
-            player.dy = -15; // JUMP
-            SFX.jump();
-        }
+    if(e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault(); // Stop scroll
+        handleJump();
     }
     if(e.code === 'KeyX' && state === 'PLAYING') {
         bullets.push({x: player.x+40, y: player.y+24, dead:false});
@@ -424,53 +300,38 @@ window.addEventListener('keydown', e => {
     }
 });
 
-/** * ==========================================================================================
- * 6. LEADERBOARD CONNECTION
- * ==========================================================================================
- */
+// Mouse/Touch Support
+window.addEventListener('mousedown', (e) => {
+    if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') handleJump();
+});
+window.addEventListener('touchstart', (e) => {
+    if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') handleJump();
+});
+
+/** 6. LEADERBOARD */
 async function loadLB() {
     try {
         const res = await fetch(LEADERBOARD_URL);
         const data = await res.json();
-        // Sort just in case script didn't, take top 5
         const top5 = data.sort((a,b) => b[1] - a[1]).slice(0, 5);
-        
         let html = "";
-        top5.forEach((row, i) => {
-            html += `<div class="lb-row"><span>#${i+1} ${row[0]}</span><span>${row[1]}</span></div>`;
-        });
+        top5.forEach((row, i) => html += `<div class="lb-row"><span>#${i+1} ${row[0]}</span><span>${row[1]}</span></div>`);
         document.getElementById('lbContainer').innerHTML = "TOP PLAYERS:<br>" + html;
-        document.getElementById('hiVal').innerText = top5[0][1];
-    } catch(e) {
-        console.log(e);
-        document.getElementById('lbContainer').innerHTML = "LEADERBOARD OFFLINE";
-    }
+        if(top5.length > 0) document.getElementById('hiVal').innerText = top5[0][1];
+    } catch(e) { document.getElementById('lbContainer').innerHTML = "LEADERBOARD OFFLINE"; }
 }
 
 async function submitScore() {
     const name = document.getElementById('playerName').value;
     if(!name) return alert("PLEASE ENTER NAME");
-    
-    const btn = document.getElementById('subBtn');
-    btn.innerText = "SENDING...";
-    
+    const btn = document.getElementById('subBtn'); btn.innerText = "SENDING...";
     try {
-        await fetch(LEADERBOARD_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify({ name: name, score: score })
-        });
-        alert("SCORE UPLOADED!");
-        location.reload();
-    } catch(e) {
-        alert("UPLOAD FAILED");
-        btn.innerText = "TRY AGAIN";
-    }
+        await fetch(LEADERBOARD_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ name: name, score: score }) });
+        alert("SCORE UPLOADED!"); location.reload();
+    } catch(e) { alert("UPLOAD FAILED"); btn.innerText = "TRY AGAIN"; }
 }
 
-// Load ranks on boot
 loadLB();
-
 </script>
 </body>
 </html>
