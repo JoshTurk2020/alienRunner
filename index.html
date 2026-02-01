@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SPRINGFIELD INFINITE</title>
+<title>SPRINGFIELD HORROR RUN</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
     
@@ -22,7 +22,7 @@
         position: relative; 
         width: 100%; max-width: 854px; 
         aspect-ratio: 16/9;
-        background: #42a4f5; /* Sky Blue */
+        background: #42a4f5; 
         border: 6px solid #000; 
         box-shadow: 10px 10px 0px rgba(0,0,0,0.2); 
         overflow: hidden; 
@@ -30,21 +30,21 @@
 
     canvas { width: 100%; height: 100%; display: block; }
 
-    /* --- DYNAMIC GIF LAYERS --- */
+    /* GIF LAYERS */
     .game-entity {
         position: absolute;
         pointer-events: none;
         image-rendering: pixelated; 
-        transform: translate(-50%, -50%); /* Center pivot */
+        transform: translate(-50%, -50%);
         z-index: 5;
     }
     
-    #playerGif { z-index: 10; height: 18%; width: auto; } /* Bart Size */
+    #playerGif { z-index: 10; height: 18%; width: auto; }
     
     /* UI ELEMENTS */
     .overlay { 
         position: absolute; top:0; left:0; width:100%; height:100%; 
-        background: rgba(0,0,0,0.6); 
+        background: rgba(0,0,0,0.7); 
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
         z-index: 50; 
     }
@@ -91,7 +91,6 @@
         box-shadow: 6px 6px 0 #000; transition: transform 0.1s;
     }
     button.menu-btn:hover { transform: scale(1.05); }
-    button.menu-btn:active { transform: scale(0.95); box-shadow: 3px 3px 0 #000; }
 
     #lbContainer {
         margin-top: 20px; font-size: 16px; color: #fff; text-align: left;
@@ -101,17 +100,19 @@
     .lb-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #555;}
     .lb-row span:last-child { color: #FFD90F; }
 
-    /* Hidden Assets for Preloading */
     #asset-pool { display: none; }
 </style>
 </head>
 <body>
 
+<audio id="bgMusic" src="simpsons.mp3" loop preload="auto"></audio>
+
 <div id="asset-pool">
     <img id="src_player" src="player.gif">
-    <img id="src_bob" src="bob.gif">
-    <img id="src_burns" src="burns.gif">
-    <img id="src_nelson" src="nelson.gif">
+    <img id="src_devil" src="devil.gif">
+    <img id="src_monster" src="monster.gif">
+    <img id="src_ninja" src="ninja.gif">
+    <img id="src_ufo" src="ufo.gif">
 </div>
 
 <div id="gameWrapper">
@@ -121,22 +122,20 @@
     </div>
 
     <img id="playerGif" class="game-entity" src="player.gif">
-    
     <div id="enemyLayer"></div>
 
     <div id="startScreen" class="overlay">
-        <h1>SPRINGFIELD<br>RUNNER</h1>
+        <h1>SPRINGFIELD<br>HORROR RUN</h1>
         <div style="text-align:center; font-size:18px; color:#fff; text-shadow:2px 2px #000; margin-top:10px;">
-            [SPACE] JUMP &nbsp;|&nbsp; [X] SLINGSHOT<br>
-            <span style="color:#FFD90F; font-size:14px;">WATCH OUT FOR SEWER HOLES!</span>
+            [SPACE] JUMP / DOUBLE JUMP<br>[X] SLINGSHOT
         </div>
         <button class="menu-btn" onclick="startGame()">START GAME</button>
-        <div id="lbContainer">LOADING LEADERBOARD...</div>
+        <div id="lbContainer">LOADING...</div>
         <div id="statusMsg" style="font-size:12px; color:#ddd; margin-top:10px;">Checking Assets...</div>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
-        <h1 style="color:#FF4444; transform:rotate(3deg);">D'OH!</h1>
+        <h1 style="color:#FF4444; transform:rotate(3deg);">AY CARAMBA!</h1>
         <p style="color:#fff; font-size:24px; text-shadow:2px 2px #000;">SCORE: <span id="finalScore">0</span></p>
         <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="15">
         <button class="menu-btn" onclick="submitScore()" id="subBtn">SAVE SCORE</button>
@@ -148,28 +147,32 @@
 </div>
 
 <script>
-// --- CONFIGURATION ---
 const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbyPAOLu61io_asry-ThXGVjqYbmCTN7DtvSvvAyl25J1DROrta614m_uXGTDMFqwomv/exec"; 
 
-// --- ASSET CHECKER ---
+// --- ASSET CHECK ---
 window.onload = () => {
-    const assets = ['player','bob','burns','nelson'];
+    const assets = ['player','devil','monster','ninja','ufo'];
     let loaded = 0;
     assets.forEach(a => {
         const img = document.getElementById('src_'+a);
         if(img.complete && img.naturalHeight !== 0) loaded++;
     });
+    
+    // Check Audio
+    const aud = document.getElementById('bgMusic');
+    aud.volume = 0.5; // Set volume to 50%
+    
     const status = document.getElementById('statusMsg');
-    if(loaded === 4) {
-        status.innerText = "ALL ASSETS LOADED. READY.";
+    if(loaded === 5) {
+        status.innerText = "ALL ASSETS LOADED.";
         status.style.color = "#4f4";
     } else {
-        status.innerText = "WARNING: SOME GIFS MISSING. GAME MAY CRASH.";
+        status.innerText = "WARNING: GIFS MISSING. CHECK FILENAMES.";
         status.style.color = "#f44";
     }
 };
 
-// --- AUDIO ENGINE (Cartoonish) ---
+// --- SFX ENGINE (Just Sound Effects now) ---
 const Actx = window.AudioContext||window.webkitAudioContext; const actx = new Actx();
 const SFX = {
     play: (f,t,d,v=0.1, slide=0) => {
@@ -181,40 +184,32 @@ const SFX = {
         g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+d);
         o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+d);
     },
-    jump: () => SFX.play(200, 'triangle', 0.2, 0.2, 200), // Boing sound
-    shoot: () => SFX.play(600, 'sawtooth', 0.1, 0.1, -400), // Pew
-    pit: () => SFX.play(100, 'sawtooth', 0.5, 0.3, -50), // Fall
-    musicTick: (f) => {
-        if(f%12===0) { // Simple Bassline
-            let notes = [150, 0, 150, 180, 130, 0, 110, 100]; 
-            let n = notes[(f/12)%8];
-            if(n>0) SFX.play(n, 'square', 0.1, 0.05);
-        }
-    }
+    jump: () => SFX.play(200, 'triangle', 0.2, 0.1, 150),
+    shoot: () => SFX.play(600, 'sawtooth', 0.1, 0.1, -300)
 };
 
 // --- GAME LOGIC ---
 const C = document.getElementById('c'), ctx = C.getContext('2d');
-// Internal Resolution
-const W = 854; 
-const H = 480;
+const W = 854, H = 480;
 C.width = W; C.height = H;
 
-// Game State
 let state='MENU', frames=0, score=0, difficulty=1;
-let player = { x:100, y:350, dy:0, grounded:true, w:40, h:80 };
-let enemies = []; // Stores {type, x, y, el}
-let pits = [];    // Stores {x, w}
-let bullets = [];
-let clouds = [];
+let player = { x:100, y:350, dy:0, grounded:true, jumps:0 };
+let enemies = [], bullets = [], clouds = [];
 
 // Init Clouds
 for(let i=0; i<10; i++) clouds.push({x:Math.random()*W, y:Math.random()*200, s:Math.random()*0.5+0.5});
 
 function startGame() {
     state='PLAYING'; score=0; frames=0; difficulty=1;
-    enemies.forEach(e => e.el.remove()); // Clear old DOM elements
-    enemies=[]; pits=[]; bullets=[];
+    enemies.forEach(e => e.el.remove()); 
+    enemies=[]; bullets=[];
+    
+    // Play Music
+    const music = document.getElementById('bgMusic');
+    music.currentTime = 0;
+    music.play().catch(e => console.log("Audio play failed (user didn't interact?)"));
+    
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('playerGif').style.display = 'block';
     loop();
@@ -224,84 +219,61 @@ function loop() {
     if(state!=='PLAYING') return;
     frames++; score++;
     
-    // Difficulty Scaling
+    // Difficulty
     if(score%500===0) difficulty++;
     let speed = 5 + (difficulty * 0.5);
-    if(speed > 14) speed = 14; // Cap speed
+    if(speed > 15) speed = 15;
     
     document.getElementById('scoreVal').innerText = score;
     document.getElementById('spdVal').innerText = Math.floor((speed/5)*100) + "%";
-    
-    SFX.musicTick(frames);
 
     // --- PHYSICS ---
     player.dy += 0.8; // Gravity
     player.y += player.dy;
     
-    // Ground Logic
+    // Ground
     let floorY = 380;
-    
-    // CHECK FOR PITS
-    let onPit = false;
-    pits.forEach(p => {
-        // If player center is inside pit width
-        if(player.x > p.x && player.x < p.x + p.w) {
-            onPit = true;
-        }
-    });
-
-    if(onPit && player.y >= floorY) {
-        // FALL IN PIT
-        player.grounded = false;
-        if(player.y > H + 50) gameOver(); // Die if fell off screen
-    } else if (player.y >= floorY) {
-        // LAND ON GROUND
+    if (player.y >= floorY) {
         player.y = floorY; 
         player.dy = 0; 
         player.grounded = true;
-    } else {
-        player.grounded = false;
+        player.jumps = 0; // Reset double jump
     }
 
     // --- SPAWNING ---
-    let spawnRate = Math.max(50, 120 - (difficulty * 5));
+    let spawnRate = Math.max(50, 110 - (difficulty * 4));
     if(frames % spawnRate === 0) {
         let r = Math.random();
+        let type = 'monster'; 
+        let y = floorY + 10;
         
-        // 20% Chance for Sewer Pit (Only after easy mode)
-        if(score > 300 && r > 0.8) {
-            pits.push({x: W, w: 90}); // 90px wide hole
-        } else {
-            // Enemy Spawn
-            let type = 'nelson'; // Default
-            if(r > 0.4) type = 'bob';
-            if(r > 0.7) type = 'burns';
-            
-            // Create DOM Element
-            let img = document.createElement('img');
-            img.src = type + '.gif';
-            img.className = 'game-entity';
-            // Size adjustments based on character
-            if(type==='bob') img.style.height = '22%'; // Tall
-            if(type==='burns') img.style.height = '14%'; // Small
-            if(type==='nelson') img.style.height = '16%'; // Medium
-            
-            document.getElementById('enemyLayer').appendChild(img);
-            
-            enemies.push({
-                type: type,
-                x: W,
-                y: floorY + 10, // Anchor to floor
-                w: 50, h: 80, // Hitbox size approximation
-                el: img
-            });
-        }
+        if(r > 0.3) type = 'devil';
+        if(r > 0.6) type = 'ninja';
+        if(r > 0.85) { type = 'ufo'; y = floorY - 60 - Math.random()*50; } // Flying
+        
+        let img = document.createElement('img');
+        img.src = type + '.gif';
+        img.className = 'game-entity';
+        
+        // Sizing
+        if(type==='ufo') img.style.height = '14%'; 
+        else img.style.height = '18%'; 
+        
+        document.getElementById('enemyLayer').appendChild(img);
+        
+        enemies.push({
+            type: type,
+            x: W, y: y,
+            w: 50, h: 80,
+            el: img,
+            dead: false
+        });
     }
 
     // --- DRAWING ---
     ctx.clearRect(0,0,W,H);
     
-    // 1. Clouds (Parallax)
+    // Clouds
     ctx.fillStyle = '#fff';
     clouds.forEach(c => {
         c.x -= speed * 0.1 * c.s;
@@ -309,75 +281,60 @@ function loop() {
         ctx.beginPath();
         ctx.arc(c.x, c.y, 30*c.s, 0, Math.PI*2);
         ctx.arc(c.x+20*c.s, c.y-10*c.s, 40*c.s, 0, Math.PI*2);
-        ctx.arc(c.x+40*c.s, c.y, 30*c.s, 0, Math.PI*2);
         ctx.fill();
     });
 
-    // 2. Floor & Pits
-    // Draw full floor first
-    ctx.fillStyle = '#999'; // Concrete
-    ctx.fillRect(0, floorY + 40, W, H - floorY); // Sidewalk top
-    ctx.fillStyle = '#777'; // Curb side
-    ctx.fillRect(0, floorY + 40 + 10, W, 20); 
-    
-    // Draw grass above sidewalk
-    ctx.fillStyle = '#4d4'; 
-    ctx.fillRect(0, floorY + 35, W, 5); 
+    // Floor
+    ctx.fillStyle = '#999'; ctx.fillRect(0, floorY + 40, W, H - floorY); 
+    ctx.fillStyle = '#4d4'; ctx.fillRect(0, floorY + 35, W, 5); 
 
-    // Draw Pits (Black Rects moving left)
-    ctx.fillStyle = '#222'; // Hole color
-    pits.forEach(p => {
-        p.x -= speed;
-        // Draw the hole in the sidewalk
-        ctx.beginPath();
-        ctx.ellipse(p.x + p.w/2, floorY + 50, p.w/2, 15, 0, 0, Math.PI*2);
-        ctx.fill();
-    });
-
-    // 3. Update Player GIF Position
+    // Update Player GIF
     const pGif = document.getElementById('playerGif');
     pGif.style.left = player.x + 'px';
-    pGif.style.top = (player.y - 20) + 'px'; // -20 offset for visual alignment
+    pGif.style.top = (player.y - 20) + 'px';
 
-    // 4. Enemies
+    // Enemies
     enemies.forEach(e => {
         e.x -= speed;
-        // Move DOM Element
-        e.el.style.left = e.x + 'px';
-        e.el.style.top = (e.y - 30) + 'px'; // Visual offset
         
-        // Hitbox Collision (Simple Box)
-        if( player.x < e.x + 30 && player.x + 30 > e.x &&
-            player.y < e.y + 10 && player.y + 70 > e.y - 60 ) {
-            gameOver();
+        // Dead logic: Fall through floor
+        if(e.dead) {
+            e.y += 5; // Fall down
+            e.el.style.opacity = parseFloat(e.el.style.opacity || 1) - 0.05;
+        }
+
+        e.el.style.left = e.x + 'px';
+        e.el.style.top = (e.y - 30) + 'px'; 
+        
+        // Collision (Only if alive)
+        if(!e.dead) {
+            if( player.x < e.x + 30 && player.x + 30 > e.x &&
+                player.y < e.y + 10 && player.y + 70 > e.y - 50 ) {
+                gameOver();
+            }
         }
     });
 
-    // 5. Bullets
+    // Bullets
     bullets.forEach(b => {
         b.x += 10;
         ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, 5, 0, Math.PI*2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill();
         
         // Hit Check
         enemies.forEach(e => {
             if(!e.dead && !b.dead && b.x > e.x - 20 && b.x < e.x + 20 && b.y > e.y - 80 && b.y < e.y) {
                 e.dead = true;
                 b.dead = true;
-                e.el.style.transform = "rotate(90deg) translate(50px, 0)"; // Knockdown animation
-                e.el.style.opacity = "0.5";
-                score += 150;
-                SFX.play(100, 'square', 0.1); // Hit sound
+                score += 100;
+                SFX.play(100, 'square', 0.1); 
             }
         });
     });
 
     // Cleanup
-    pits = pits.filter(p => p.x > -100);
     enemies = enemies.filter(e => {
-        if(e.x < -100) { e.el.remove(); return false; }
+        if(e.x < -100 || e.y > H + 100) { e.el.remove(); return false; }
         return true;
     });
     bullets = bullets.filter(b => b.x < W);
@@ -387,15 +344,17 @@ function loop() {
 
 function gameOver() {
     state='GAMEOVER'; 
-    SFX.pit();
+    document.getElementById('bgMusic').pause(); // Stop music
+    SFX.play(100, 'sawtooth', 0.5, 0.3, -50); // Fail sound
     document.getElementById('finalScore').innerText=score;
     document.getElementById('gameOverScreen').classList.remove('hidden');
 }
 
 function jump() { 
-    if(player.grounded) { 
-        player.dy = -14; // Higher Jump
+    if(player.grounded || player.jumps < 2) { 
+        player.dy = -13; 
         player.grounded = false; 
+        player.jumps++;
         SFX.jump(); 
     } 
 }
@@ -434,7 +393,7 @@ async function loadLB() {
         let r = await fetch(LEADERBOARD_URL);
         let d = await r.json();
         let h = d.sort((a,b)=>b[1]-a[1]).slice(0,5).map(r=>`<div class="lb-row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
-        document.getElementById('lbContainer').innerHTML = "SPRINGFIELD TOP 5:<br>" + h;
+        document.getElementById('lbContainer').innerHTML = "TOP 5:<br>" + h;
     } catch(e){ document.getElementById('lbContainer').innerText = "LB OFFLINE"; }
 }
 loadLB();
