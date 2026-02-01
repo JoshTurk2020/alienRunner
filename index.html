@@ -3,102 +3,147 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>XENORUN: GIF EDITION</title>
+<title>SPRINGFIELD INFINITE</title>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
     
     * { box-sizing: border-box; touch-action: none; }
     
     body { 
-        margin: 0; background: #111; overflow: hidden; 
-        font-family: 'Press Start 2P', cursive; color: #fff; 
+        margin: 0; 
+        background: #FFD90F; /* Simpsons Yellow */
+        overflow: hidden; 
+        font-family: 'Bangers', cursive; 
         display: flex; justify-content: center; align-items: center; 
         height: 100vh; user-select: none; 
     }
 
     #gameWrapper { 
         position: relative; 
-        width: 100%; max-width: 800px; 
+        width: 100%; max-width: 854px; 
         aspect-ratio: 16/9;
-        background: #000; 
-        border: 4px solid #333; 
-        box-shadow: 0 0 50px rgba(0,0,0,0.5); 
-        overflow: hidden; /* Keeps the GIF inside */
+        background: #42a4f5; /* Sky Blue */
+        border: 6px solid #000; 
+        box-shadow: 10px 10px 0px rgba(0,0,0,0.2); 
+        overflow: hidden; 
     }
 
-    canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+    canvas { width: 100%; height: 100%; display: block; }
 
-    /* THE PLAYER GIF OVERLAY */
-    #playerGif {
+    /* --- DYNAMIC GIF LAYERS --- */
+    .game-entity {
         position: absolute;
-        width: 10%; /* Relative size to screen */
-        height: auto;
-        z-index: 5;
-        display: none; /* Hidden until game starts */
         pointer-events: none;
-        image-rendering: pixelated; /* Keeps pixel art crisp */
+        image-rendering: pixelated; 
+        transform: translate(-50%, -50%); /* Center pivot */
+        z-index: 5;
     }
-
-    /* UI Overlay */
+    
+    #playerGif { z-index: 10; height: 18%; width: auto; } /* Bart Size */
+    
+    /* UI ELEMENTS */
     .overlay { 
         position: absolute; top:0; left:0; width:100%; height:100%; 
-        background: rgba(0,0,0,0.85); 
+        background: rgba(0,0,0,0.6); 
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        z-index: 20; 
+        z-index: 50; 
     }
-    .hidden { opacity: 0; pointer-events: none; }
+    .hidden { display: none !important; }
     
-    h1 { font-size: 40px; color: #fc0; text-shadow: 4px 4px #f00; margin-bottom: 20px; text-align: center; } 
-    .hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-size: 14px; color: #fff; z-index: 5; pointer-events: none; }
+    h1 { 
+        font-size: clamp(40px, 8vw, 80px); 
+        color: #FFD90F; 
+        -webkit-text-stroke: 3px black;
+        text-shadow: 5px 5px #000; 
+        margin: 0; line-height: 1; 
+        transform: rotate(-3deg);
+    }
     
-    /* Mobile Fire Button */
+    .hud { 
+        position: absolute; top: 15px; left: 20px; right: 20px; 
+        display: flex; justify-content: space-between; 
+        font-size: 24px; color: #fff; 
+        text-shadow: 3px 3px 0 #000;
+        z-index: 40; pointer-events: none; 
+    }
+    
     .fire-btn { 
         position: absolute; bottom: 30px; right: 30px; 
-        width: 80px; height: 80px; border-radius: 50%; 
-        background: rgba(255,0,0,0.5); border: 2px solid #f00; color:white; 
-        display:flex; align-items:center; justify-content:center; z-index:15; 
-        font-size: 12px;
+        width: 90px; height: 90px; border-radius: 50%; 
+        background: #FFD90F; border: 4px solid #000; 
+        color:black; font-size: 20px; display:flex; 
+        align-items:center; justify-content:center; z-index:45; 
+        box-shadow: 4px 4px 0 #000;
     }
-    .fire-btn:active { background: #f00; }
+    .fire-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
 
-    input { background: #000; border: 2px solid #fc0; color: #fc0; padding: 10px; font-family: inherit; font-size: 16px; width: 250px; text-align: center; margin-top: 10px; text-transform: uppercase; }
-    button { background: #fc0; color: #000; border: none; padding: 15px 20px; font-family: inherit; font-size: 14px; margin-top: 15px; cursor: pointer; }
-    button:hover { background: #fff; }
+    input { 
+        background: #fff; border: 4px solid #000; color: #000; 
+        padding: 10px; font-family: inherit; font-size: 20px; 
+        width: 300px; text-align: center; margin-top: 20px; 
+        text-transform: uppercase; 
+    }
+    
+    button.menu-btn { 
+        background: #FFD90F; color: #000; border: 4px solid #000; 
+        padding: 10px 30px; font-family: inherit; font-size: 24px; 
+        margin-top: 15px; cursor: pointer; 
+        box-shadow: 6px 6px 0 #000; transition: transform 0.1s;
+    }
+    button.menu-btn:hover { transform: scale(1.05); }
+    button.menu-btn:active { transform: scale(0.95); box-shadow: 3px 3px 0 #000; }
 
+    #lbContainer {
+        margin-top: 20px; font-size: 16px; color: #fff; text-align: left;
+        background: rgba(0,0,0,0.8); padding: 15px; border: 2px solid #FFD90F;
+        border-radius: 10px; min-width: 300px;
+    }
+    .lb-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #555;}
+    .lb-row span:last-child { color: #FFD90F; }
+
+    /* Hidden Assets for Preloading */
+    #asset-pool { display: none; }
 </style>
 </head>
 <body>
 
+<div id="asset-pool">
+    <img id="src_player" src="player.gif">
+    <img id="src_bob" src="bob.gif">
+    <img id="src_burns" src="burns.gif">
+    <img id="src_nelson" src="nelson.gif">
+</div>
+
 <div id="gameWrapper">
     <div class="hud">
         <span>SCORE: <span id="scoreVal">0</span></span>
-        <span>LVL: <span id="lvlVal">1</span></span>
+        <span>SPEED: <span id="spdVal">100%</span></span>
     </div>
 
-    <img id="playerGif" src="player.gif" alt="Player">
+    <img id="playerGif" class="game-entity" src="player.gif">
+    
+    <div id="enemyLayer"></div>
 
     <div id="startScreen" class="overlay">
-        <h1>XENORUN<br><span style="font-size:15px; color:#fff;">GIF EDITION</span></h1>
-        <div style="text-align:center; font-size:10px; color:#aaa; line-height:2; margin-bottom:20px;">
-            INSTRUCTIONS:<br>
-            1. NAME YOUR FILE 'player.gif'<br>
-            2. PLACE IN SAME FOLDER<br>
-            <br>
-            CONTROLS: [SPACE] JUMP | [X] SHOOT
+        <h1>SPRINGFIELD<br>RUNNER</h1>
+        <div style="text-align:center; font-size:18px; color:#fff; text-shadow:2px 2px #000; margin-top:10px;">
+            [SPACE] JUMP &nbsp;|&nbsp; [X] SLINGSHOT<br>
+            <span style="color:#FFD90F; font-size:14px;">WATCH OUT FOR SEWER HOLES!</span>
         </div>
-        <button onclick="startGame()">START GAME</button>
-        <div style="margin-top:10px; font-size:10px; color:#666;" id="statusMsg">Checking for player.gif...</div>
+        <button class="menu-btn" onclick="startGame()">START GAME</button>
+        <div id="lbContainer">LOADING LEADERBOARD...</div>
+        <div id="statusMsg" style="font-size:12px; color:#ddd; margin-top:10px;">Checking Assets...</div>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
-        <h1 style="color:#e44;">GAME OVER</h1>
-        <p>SCORE: <span id="finalScore">0</span></p>
-        <input type="text" id="playerName" placeholder="NAME" maxlength="15">
-        <button onclick="submitScore()" id="subBtn">SUBMIT</button>
-        <button onclick="location.reload()" style="background:#000; color:#fff; border:1px solid #fff;">RETRY</button>
+        <h1 style="color:#FF4444; transform:rotate(3deg);">D'OH!</h1>
+        <p style="color:#fff; font-size:24px; text-shadow:2px 2px #000;">SCORE: <span id="finalScore">0</span></p>
+        <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="15">
+        <button class="menu-btn" onclick="submitScore()" id="subBtn">SAVE SCORE</button>
+        <button class="menu-btn" onclick="location.reload()" style="background:#fff;">RETRY</button>
     </div>
 
-    <div class="fire-btn" id="mobFire">FIRE</div>
+    <div class="fire-btn" id="mobFire">POW</div>
     <canvas id="c"></canvas>
 </div>
 
@@ -106,159 +151,293 @@
 // --- CONFIGURATION ---
 const LEADERBOARD_URL = "https://script.google.com/macros/s/AKfycbyPAOLu61io_asry-ThXGVjqYbmCTN7DtvSvvAyl25J1DROrta614m_uXGTDMFqwomv/exec"; 
 
-// --- CHECK FOR GIF ---
-const pGif = document.getElementById('playerGif');
-pGif.onload = () => {
-    document.getElementById('statusMsg').innerText = "GIF FOUND! READY TO RUN.";
-    document.getElementById('statusMsg').style.color = "#0f0";
-};
-pGif.onerror = () => {
-    document.getElementById('statusMsg').innerText = "WARNING: player.gif NOT FOUND";
-    document.getElementById('statusMsg').style.color = "red";
+// --- ASSET CHECKER ---
+window.onload = () => {
+    const assets = ['player','bob','burns','nelson'];
+    let loaded = 0;
+    assets.forEach(a => {
+        const img = document.getElementById('src_'+a);
+        if(img.complete && img.naturalHeight !== 0) loaded++;
+    });
+    const status = document.getElementById('statusMsg');
+    if(loaded === 4) {
+        status.innerText = "ALL ASSETS LOADED. READY.";
+        status.style.color = "#4f4";
+    } else {
+        status.innerText = "WARNING: SOME GIFS MISSING. GAME MAY CRASH.";
+        status.style.color = "#f44";
+    }
 };
 
-// --- AUDIO ---
+// --- AUDIO ENGINE (Cartoonish) ---
 const Actx = window.AudioContext||window.webkitAudioContext; const actx = new Actx();
 const SFX = {
-    play: (f,t,d,v=0.1) => {
+    play: (f,t,d,v=0.1, slide=0) => {
         if(actx.state==='suspended')actx.resume();
         const o=actx.createOscillator(), g=actx.createGain();
-        o.type=t; o.frequency.value=f; g.gain.setValueAtTime(v, actx.currentTime);
+        o.type=t; o.frequency.setValueAtTime(f, actx.currentTime);
+        if(slide!==0) o.frequency.linearRampToValueAtTime(f+slide, actx.currentTime+d);
+        g.gain.setValueAtTime(v, actx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+d);
         o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+d);
     },
-    boom: () => {
-        const b=actx.createBuffer(1, actx.sampleRate*0.2, actx.sampleRate);
-        const d=b.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
-        const s=actx.createBufferSource(); s.buffer=b; 
-        const g=actx.createGain(); g.gain.value=0.2; g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+0.2);
-        s.connect(g); g.connect(actx.destination); s.start();
+    jump: () => SFX.play(200, 'triangle', 0.2, 0.2, 200), // Boing sound
+    shoot: () => SFX.play(600, 'sawtooth', 0.1, 0.1, -400), // Pew
+    pit: () => SFX.play(100, 'sawtooth', 0.5, 0.3, -50), // Fall
+    musicTick: (f) => {
+        if(f%12===0) { // Simple Bassline
+            let notes = [150, 0, 150, 180, 130, 0, 110, 100]; 
+            let n = notes[(f/12)%8];
+            if(n>0) SFX.play(n, 'square', 0.1, 0.05);
+        }
     }
 };
 
 // --- GAME LOGIC ---
 const C = document.getElementById('c'), ctx = C.getContext('2d');
-// Internal resolution (NES Style)
-const W = 320; 
-const H = 180;
+// Internal Resolution
+const W = 854; 
+const H = 480;
 C.width = W; C.height = H;
 
-let state='MENU', frames=0, score=0, difficulty=1, player={x:30,y:120,dy:0,grounded:true};
-let entities=[], bullets=[], stars=[];
+// Game State
+let state='MENU', frames=0, score=0, difficulty=1;
+let player = { x:100, y:350, dy:0, grounded:true, w:40, h:80 };
+let enemies = []; // Stores {type, x, y, el}
+let pits = [];    // Stores {x, w}
+let bullets = [];
+let clouds = [];
 
-// Init Stars
-for(let i=0;i<40;i++)stars.push({x:Math.random()*W,y:Math.random()*120,s:Math.random()>0.8?2:1});
-
-// Code-generated Enemies
-const PAL = { p:'#a4e', r:'#e44', w:'#fff' };
-const MAPS = {
-    alien: ["  444 "," 44444","444544","44444 "," 4  4 ","4 44 4"],
-    drone: [" 4444 ","445544","444444"," 4  4 "]
-};
-function makeSprite(map) {
-    const cvs = document.createElement('canvas'); cvs.width=16; cvs.height=16;
-    const cx=cvs.getContext('2d');
-    map.forEach((r,y)=>{ for(let x=0;x<r.length;x++) {
-        let c=r[x]; if(c==='4')cx.fillStyle=PAL.p; if(c==='5')cx.fillStyle=PAL.r;
-        if(c!==' ')cx.fillRect(x*2,y*2,2,2);
-    }}); return cvs;
-}
-const IMG = { alien: makeSprite(MAPS.alien), drone: makeSprite(MAPS.drone) };
-
+// Init Clouds
+for(let i=0; i<10; i++) clouds.push({x:Math.random()*W, y:Math.random()*200, s:Math.random()*0.5+0.5});
 
 function startGame() {
-    state='PLAYING'; score=0; frames=0; difficulty=1; entities=[]; bullets=[];
+    state='PLAYING'; score=0; frames=0; difficulty=1;
+    enemies.forEach(e => e.el.remove()); // Clear old DOM elements
+    enemies=[]; pits=[]; bullets=[];
     document.getElementById('startScreen').classList.add('hidden');
-    // Show the GIF
-    pGif.style.display = "block";
+    document.getElementById('playerGif').style.display = 'block';
     loop();
 }
 
 function loop() {
     if(state!=='PLAYING') return;
     frames++; score++;
-    if(score%500===0) difficulty++;
-    document.getElementById('scoreVal').innerText = score.toString().padStart(5,'0');
-    document.getElementById('lvlVal').innerText = difficulty;
-
-    let speed = 2 + (difficulty*0.2); if(speed>6) speed=6;
-
-    // Physics
-    player.dy += 0.25; player.y += player.dy;
-    // Floor collision
-    if(player.y >= 135) { player.y=135; player.dy=0; player.grounded=true; } else player.grounded=false;
-
-    // UPDATE GIF POSITION (Use Percentages to match Canvas)
-    // Convert game coordinates (320x180) to CSS percentages
-    pGif.style.left = (player.x / W * 100) + '%';
-    pGif.style.top = ((player.y - 10) / H * 100) + '%'; // -10 offset for GIF height
-
-    // Spawning
-    if(frames % Math.floor(100-(difficulty*5)) === 0) {
-        let type = Math.random()>0.7 ? 'drone' : 'alien';
-        entities.push({type:type, x:W, y:type==='drone'?100:135, w:12, h:12, dead:false});
-    }
-
-    // DRAW
-    ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H); // BG
     
-    // Stars
-    ctx.fillStyle='#fff'; stars.forEach(s=>{ s.x-=speed*(s.s===2?0.5:0.2); if(s.x<0)s.x=W; ctx.fillRect(s.x,s.y,s.s,s.s); });
+    // Difficulty Scaling
+    if(score%500===0) difficulty++;
+    let speed = 5 + (difficulty * 0.5);
+    if(speed > 14) speed = 14; // Cap speed
+    
+    document.getElementById('scoreVal').innerText = score;
+    document.getElementById('spdVal').innerText = Math.floor((speed/5)*100) + "%";
+    
+    SFX.musicTick(frames);
 
-    // Floor
-    ctx.fillStyle='#333'; ctx.fillRect(0,150,W,30); ctx.fillStyle='#fc0'; ctx.fillRect(0,150,W,2);
-
-    // Entities
-    entities.forEach(e=>{
-        e.x -= speed;
-        ctx.drawImage(IMG[e.type], e.x, e.y);
-        // Collision
-        if(!e.dead && player.x < e.x+10 && player.x+10 > e.x && player.y < e.y+10 && player.y+10 > e.y) gameOver();
+    // --- PHYSICS ---
+    player.dy += 0.8; // Gravity
+    player.y += player.dy;
+    
+    // Ground Logic
+    let floorY = 380;
+    
+    // CHECK FOR PITS
+    let onPit = false;
+    pits.forEach(p => {
+        // If player center is inside pit width
+        if(player.x > p.x && player.x < p.x + p.w) {
+            onPit = true;
+        }
     });
 
-    // Bullets
-    bullets.forEach(b=>{
-        b.x+=4; ctx.fillStyle='#ff0'; ctx.fillRect(b.x,b.y,4,2);
-        entities.forEach(e=>{
-            if(!e.dead && !b.dead && b.x < e.x+12 && b.x+4 > e.x && b.y < e.y+12 && b.y+2 > e.y) {
-                e.dead=true; b.dead=true; score+=100; SFX.boom();
+    if(onPit && player.y >= floorY) {
+        // FALL IN PIT
+        player.grounded = false;
+        if(player.y > H + 50) gameOver(); // Die if fell off screen
+    } else if (player.y >= floorY) {
+        // LAND ON GROUND
+        player.y = floorY; 
+        player.dy = 0; 
+        player.grounded = true;
+    } else {
+        player.grounded = false;
+    }
+
+    // --- SPAWNING ---
+    let spawnRate = Math.max(50, 120 - (difficulty * 5));
+    if(frames % spawnRate === 0) {
+        let r = Math.random();
+        
+        // 20% Chance for Sewer Pit (Only after easy mode)
+        if(score > 300 && r > 0.8) {
+            pits.push({x: W, w: 90}); // 90px wide hole
+        } else {
+            // Enemy Spawn
+            let type = 'nelson'; // Default
+            if(r > 0.4) type = 'bob';
+            if(r > 0.7) type = 'burns';
+            
+            // Create DOM Element
+            let img = document.createElement('img');
+            img.src = type + '.gif';
+            img.className = 'game-entity';
+            // Size adjustments based on character
+            if(type==='bob') img.style.height = '22%'; // Tall
+            if(type==='burns') img.style.height = '14%'; // Small
+            if(type==='nelson') img.style.height = '16%'; // Medium
+            
+            document.getElementById('enemyLayer').appendChild(img);
+            
+            enemies.push({
+                type: type,
+                x: W,
+                y: floorY + 10, // Anchor to floor
+                w: 50, h: 80, // Hitbox size approximation
+                el: img
+            });
+        }
+    }
+
+    // --- DRAWING ---
+    ctx.clearRect(0,0,W,H);
+    
+    // 1. Clouds (Parallax)
+    ctx.fillStyle = '#fff';
+    clouds.forEach(c => {
+        c.x -= speed * 0.1 * c.s;
+        if(c.x < -100) c.x = W + 100;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 30*c.s, 0, Math.PI*2);
+        ctx.arc(c.x+20*c.s, c.y-10*c.s, 40*c.s, 0, Math.PI*2);
+        ctx.arc(c.x+40*c.s, c.y, 30*c.s, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    // 2. Floor & Pits
+    // Draw full floor first
+    ctx.fillStyle = '#999'; // Concrete
+    ctx.fillRect(0, floorY + 40, W, H - floorY); // Sidewalk top
+    ctx.fillStyle = '#777'; // Curb side
+    ctx.fillRect(0, floorY + 40 + 10, W, 20); 
+    
+    // Draw grass above sidewalk
+    ctx.fillStyle = '#4d4'; 
+    ctx.fillRect(0, floorY + 35, W, 5); 
+
+    // Draw Pits (Black Rects moving left)
+    ctx.fillStyle = '#222'; // Hole color
+    pits.forEach(p => {
+        p.x -= speed;
+        // Draw the hole in the sidewalk
+        ctx.beginPath();
+        ctx.ellipse(p.x + p.w/2, floorY + 50, p.w/2, 15, 0, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    // 3. Update Player GIF Position
+    const pGif = document.getElementById('playerGif');
+    pGif.style.left = player.x + 'px';
+    pGif.style.top = (player.y - 20) + 'px'; // -20 offset for visual alignment
+
+    // 4. Enemies
+    enemies.forEach(e => {
+        e.x -= speed;
+        // Move DOM Element
+        e.el.style.left = e.x + 'px';
+        e.el.style.top = (e.y - 30) + 'px'; // Visual offset
+        
+        // Hitbox Collision (Simple Box)
+        if( player.x < e.x + 30 && player.x + 30 > e.x &&
+            player.y < e.y + 10 && player.y + 70 > e.y - 60 ) {
+            gameOver();
+        }
+    });
+
+    // 5. Bullets
+    bullets.forEach(b => {
+        b.x += 10;
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 5, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Hit Check
+        enemies.forEach(e => {
+            if(!e.dead && !b.dead && b.x > e.x - 20 && b.x < e.x + 20 && b.y > e.y - 80 && b.y < e.y) {
+                e.dead = true;
+                b.dead = true;
+                e.el.style.transform = "rotate(90deg) translate(50px, 0)"; // Knockdown animation
+                e.el.style.opacity = "0.5";
+                score += 150;
+                SFX.play(100, 'square', 0.1); // Hit sound
             }
         });
     });
 
-    entities = entities.filter(e=>e.x>-20 && !e.dead);
-    bullets = bullets.filter(b=>b.x<320 && !b.dead);
+    // Cleanup
+    pits = pits.filter(p => p.x > -100);
+    enemies = enemies.filter(e => {
+        if(e.x < -100) { e.el.remove(); return false; }
+        return true;
+    });
+    bullets = bullets.filter(b => b.x < W);
 
     requestAnimationFrame(loop);
 }
 
 function gameOver() {
-    state='GAMEOVER'; SFX.play(50,'sawtooth',0.5);
+    state='GAMEOVER'; 
+    SFX.pit();
     document.getElementById('finalScore').innerText=score;
     document.getElementById('gameOverScreen').classList.remove('hidden');
-    pGif.style.display = "none"; // Hide GIF on death
 }
 
-function jump() { if(player.grounded) { player.dy=-4.5; player.grounded=false; SFX.play(200,'square',0.1); } }
-function shoot() { bullets.push({x:player.x+10, y:player.y+8, dead:false}); SFX.play(600,'square',0.05); }
+function jump() { 
+    if(player.grounded) { 
+        player.dy = -14; // Higher Jump
+        player.grounded = false; 
+        SFX.jump(); 
+    } 
+}
+function shoot() { 
+    bullets.push({x:player.x, y:player.y - 30, dead:false}); 
+    SFX.shoot(); 
+}
 
-// Controls
-window.addEventListener('keydown', e=>{ if(e.code==='Space')jump(); if(e.code==='KeyX')shoot(); });
-document.getElementById('gameWrapper').addEventListener('touchstart', e=>{
-    if(e.target.id!=='mobFire' && e.target.tagName!=='BUTTON') jump();
+// CONTROLS
+window.addEventListener('keydown', e=>{ 
+    if(e.code==='Space' || e.code==='ArrowUp') jump(); 
+    if(e.code==='KeyX') shoot(); 
 });
-document.getElementById('mobFire').addEventListener('mousedown', (e)=>{ e.stopPropagation(); shoot(); });
-document.getElementById('mobFire').addEventListener('touchstart', (e)=>{ e.stopPropagation(); e.preventDefault(); shoot(); });
+document.getElementById('gameWrapper').addEventListener('touchstart', e=>{
+    if(e.target.id!=='mobFire' && e.target.tagName!=='BUTTON') { e.preventDefault(); jump(); }
+});
+document.getElementById('mobFire').addEventListener('touchstart', (e)=>{ 
+    e.stopPropagation(); e.preventDefault(); shoot(); 
+});
+document.getElementById('mobFire').addEventListener('mousedown', (e)=>{ 
+    e.stopPropagation(); shoot(); 
+});
 
-// Leaderboard
+// LEADERBOARD
 async function submitScore() {
-    let n = document.getElementById('playerName').value; if(!n) return alert("NAME?");
+    let n = document.getElementById('playerName').value; if(!n) return alert("ENTER NAME");
     document.getElementById('subBtn').innerText = "...";
     try {
         await fetch(LEADERBOARD_URL, {method:'POST', mode:'no-cors', body:JSON.stringify({name:n, score:score})});
-        alert("SENT"); location.reload();
+        alert("SCORE SAVED!"); location.reload();
     } catch(e) { alert("ERROR"); }
 }
+
+async function loadLB() {
+    try {
+        let r = await fetch(LEADERBOARD_URL);
+        let d = await r.json();
+        let h = d.sort((a,b)=>b[1]-a[1]).slice(0,5).map(r=>`<div class="lb-row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+        document.getElementById('lbContainer').innerHTML = "SPRINGFIELD TOP 5:<br>" + h;
+    } catch(e){ document.getElementById('lbContainer').innerText = "LB OFFLINE"; }
+}
+loadLB();
 </script>
 </body>
 </html>
